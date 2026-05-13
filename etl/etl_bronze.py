@@ -28,13 +28,13 @@ if __name__ == "__main__":
     spark = create_spark_session()
 
     table_paths = {
-        "movies":           "/IMDB_ijs/movies.parquet",
-        "actors":           "/IMDB_ijs/actors.parquet",
-        "directors":        "/IMDB_ijs/directors.parquet",
-        "roles":            "/IMDB_ijs/roles.parquet",
-        "movies_genres":    "/IMDB_ijs/movies_genres.parquet",
-        "movies_directors": "/IMDB_ijs/movies_directors.parquet",
-        "directors_genres": "/IMDB_ijs/directors_genres.parquet",
+        "movies":           "/data/movies.parquet",
+        "actors":           "/data/actors.parquet",
+        "directors":        "/data/directors.parquet",
+        "roles":            "/data/roles.parquet",
+        "movies_genres":    "/data/movies_genres.parquet",
+        "movies_directors": "/data/movies_directors.parquet",
+        "directors_genres": "/data/directors_genres.parquet",
     }
 
     for table, path in table_paths.items():

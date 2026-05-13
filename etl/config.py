@@ -1,8 +1,8 @@
 # config.py
-MINIO_ENDPOINT = "minio:9000"
-MINIO_ACCESS_KEY = "admin"
-MINIO_SECRET_KEY = "12345678"
-BUCKET_NAME = "imdb-datalake"
+MINIO_ENDPOINT = "34.142.199.71:9000"   # ← đổi thành IP:9000 (S3 API port, không phải 9001)
+MINIO_ACCESS_KEY = "admin"   # ← tài khoản được cấp
+MINIO_SECRET_KEY = "12345678"   # ← mật khẩu được cấp
+BUCKET_NAME = "imdb"                     # ← tên bucket đã có sẵn trên server
 
 BRONZE_PATH = f"s3a://{BUCKET_NAME}/bronze"
 SILVER_PATH = f"s3a://{BUCKET_NAME}/silver"

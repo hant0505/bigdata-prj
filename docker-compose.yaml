@@ -45,7 +45,7 @@ services:
       - "4040:4040"
     volumes:
       - ./etl:/etl
-      - ./IMBD_ijs:/data
+      - ./data:/data
     networks:
       - imdb_net
 
@@ -59,7 +59,7 @@ services:
       - SPARK_WORKER_MEMORY=2g
       - SPARK_WORKER_CORES=2
     volumes:
-      - ./IMBD_ijs:/data
+      - ./data:/data
     networks:
       - imdb_net
 
@@ -73,7 +73,7 @@ services:
       - SPARK_WORKER_MEMORY=2g
       - SPARK_WORKER_CORES=2
     volumes:
-      - ./IMBD_ijs:/data
+      - ./data:/data
     networks:
       - imdb_net
 
