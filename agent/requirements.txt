@@ -1,0 +1,6 @@
+crewai
+crewai[google-genai]
+google-genai
+python-dotenv
+streamlit
+pydantic
