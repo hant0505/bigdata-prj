@@ -1,18 +1,19 @@
 services:
   spark-master:
-    image: bde2020/spark-master:3.3.0-hadoop3.3
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: custom-spark:3.3.0
     container_name: spark-master
     environment:
       - INIT_DAEMON_STEP=setup_spark
     ports:
       - "7077:7077"
       - "8080:8080"
-    volumes:
-      - ./jars/hadoop-aws-3.3.2.jar:/spark/jars/hadoop-aws-3.3.2.jar
-      - ./jars/aws-java-sdk-bundle-1.11.1026.jar:/spark/jars/aws-java-sdk-bundle-1.11.1026.jar
+    # Đã bỏ phần volumes chứa jars vì đã copy trực tiếp trong Dockerfile
 
   spark-client:
-    image: bde2020/spark-base:3.3.0-hadoop3.3
+    image: custom-spark:3.3.0  # Dùng lại image đã build ở trên
     container_name: spark-client
     stdin_open: true
     tty: true
@@ -22,11 +23,10 @@ services:
       - SPARK_MASTER=spark://spark-master:7077
     ports:
       - "4040:4040"
-    volumes:
-      - ./jars/hadoop-aws-3.3.2.jar:/spark/jars/hadoop-aws-3.3.2.jar
-      - ./jars/aws-java-sdk-bundle-1.11.1026.jar:/spark/jars/aws-java-sdk-bundle-1.11.1026.jar
-  
+
   spark-worker-1:
+    # Ở đây chúng ta cần đổi base image trong file Dockerfile thành bde2020/spark-worker
+    # Hoặc đơn giản là vẫn mount bình thường nếu dùng chung image bde2020/spark-worker gốc.
     image: bde2020/spark-worker:3.3.0-hadoop3.3
     container_name: spark-worker-1
     depends_on:
@@ -36,6 +36,8 @@ services:
       - SPARK_WORKER_MEMORY=1g
       - SPARK_WORKER_CORES=2
     volumes:
+      # Nếu worker dùng image riêng, bạn vẫn có thể giữ phần volumes này
+      # Hoặc tạo thêm 1 Dockerfile.worker kế thừa từ bde2020/spark-worker:3.3.0-hadoop3.3
       - ./jars/hadoop-aws-3.3.2.jar:/spark/jars/hadoop-aws-3.3.2.jar
       - ./jars/aws-java-sdk-bundle-1.11.1026.jar:/spark/jars/aws-java-sdk-bundle-1.11.1026.jar
 
@@ -51,6 +53,7 @@ services:
     volumes:
       - ./jars/hadoop-aws-3.3.2.jar:/spark/jars/hadoop-aws-3.3.2.jar
       - ./jars/aws-java-sdk-bundle-1.11.1026.jar:/spark/jars/aws-java-sdk-bundle-1.11.1026.jar
+      
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
@@ -65,4 +68,3 @@ services:
 
 volumes:
   minio-data:
-  
