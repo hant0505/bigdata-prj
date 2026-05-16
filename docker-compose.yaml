@@ -66,5 +66,24 @@ services:
     volumes:
       - ./minio-data:/data
 
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    image: bigdata-agent:latest
+    container_name: bigdata-agent
+    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    ports:
+      - "8501:8501"
+    depends_on:
+      - minio
+      - spark-master
+    restart: unless-stopped
+    volumes:
+      - ./agent:/app
+
 volumes:
   minio-data:
