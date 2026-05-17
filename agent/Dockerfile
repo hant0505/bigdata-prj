@@ -14,9 +14,12 @@ RUN pip install --no-cache-dir --upgrade pip
 # 3. Copy file requirements độc lập để tận dụng Docker Cache layer
 COPY requirements.txt /app/requirements.txt
 
-# 4. Sử dụng Mirror khu vực châu Á để tải cực nhanh + Thêm cờ khuyên dùng Wheels
-RUN pip install --no-cache-dir \
-    --index-url https://tsinghua.edu.cn \
+# 4. Cache pip downloads between Docker builds to speed rebuilds
+#    Requires Docker BuildKit (DOCKER_BUILDKIT=1) — first build still downloads
+#    Subsequent builds will use the cached wheels in /root/.cache/pip
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install \
+    --index-url https://pypi.org/simple \
     --prefer-binary \
     -r /app/requirements.txt
 

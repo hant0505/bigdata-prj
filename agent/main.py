@@ -7,7 +7,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from crewai import Crew, Task, Process, LLM
-from langchain_google_genai import ChatGoogleGenerativeAI
 from agents.agents import create_agents
 from dotenv import load_dotenv
 load_dotenv()

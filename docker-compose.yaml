@@ -25,8 +25,6 @@ services:
       - "4040:4040"
 
   spark-worker-1:
-    # Ở đây chúng ta cần đổi base image trong file Dockerfile thành bde2020/spark-worker
-    # Hoặc đơn giản là vẫn mount bình thường nếu dùng chung image bde2020/spark-worker gốc.
     image: bde2020/spark-worker:3.3.0-hadoop3.3
     container_name: spark-worker-1
     depends_on:
@@ -35,11 +33,6 @@ services:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_MEMORY=1g
       - SPARK_WORKER_CORES=2
-    volumes:
-      # Nếu worker dùng image riêng, bạn vẫn có thể giữ phần volumes này
-      # Hoặc tạo thêm 1 Dockerfile.worker kế thừa từ bde2020/spark-worker:3.3.0-hadoop3.3
-      - ./jars/hadoop-aws-3.3.2.jar:/spark/jars/hadoop-aws-3.3.2.jar
-      - ./jars/aws-java-sdk-bundle-1.11.1026.jar:/spark/jars/aws-java-sdk-bundle-1.11.1026.jar
 
   spark-worker-2:
     image: bde2020/spark-worker:3.3.0-hadoop3.3
@@ -50,9 +43,6 @@ services:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_MEMORY=1g
       - SPARK_WORKER_CORES=2
-    volumes:
-      - ./jars/hadoop-aws-3.3.2.jar:/spark/jars/hadoop-aws-3.3.2.jar
-      - ./jars/aws-java-sdk-bundle-1.11.1026.jar:/spark/jars/aws-java-sdk-bundle-1.11.1026.jar
       
   minio:
     image: minio/minio
