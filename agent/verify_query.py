@@ -1,64 +1,90 @@
-import sqlite3
+﻿import os
 
-DB_PATH = "data/chinook.db"
+try:
+    from pyspark.sql import SparkSession
+except ImportError:
+    SparkSession = None
+
+DATA_DIR = "data"
+
+
+def _register_parquet_tables(spark):
+    for fname in sorted(os.listdir(DATA_DIR)):
+        if not fname.lower().endswith(".parquet"):
+            continue
+        table = os.path.splitext(fname)[0]
+        path = os.path.join(DATA_DIR, fname).replace('\\', '/')
+        df = spark.read.parquet(path)
+        df.createOrReplaceTempView(table)
+
+
+def _create_spark_session():
+    if SparkSession is None:
+        return None
+
+    spark = SparkSession.builder.appName("VerifySilverParquet").master("local[*]").getOrCreate()
+    spark.sparkContext.setLogLevel("WARN")
+    return spark
+
 
 def run_query(query, description):
     print("\n" + "="*50)
     print(f"🔍 {description}")
     print("="*50)
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    spark = _create_spark_session()
+    if spark is None:
+        print("❌ pyspark is not installed. Please install pyspark in the agent environment.")
+        return
+
+    _register_parquet_tables(spark)
 
     try:
-        cursor.execute(query)
-        rows = cursor.fetchall()
+        df = spark.sql(query)
+        rows = df.collect()
 
         print(f"✅ Số dòng trả về: {len(rows)}")
         for row in rows:
-            print(row)
+            print(tuple(row))
 
     except Exception as e:
         print("❌ Lỗi:", e)
 
     finally:
-        conn.close()
+        spark.stop()
 
 
 def main():
-    print("🧪 VERIFY DATABASE\n")
+    print("🧪 VERIFY SILVER PARQUET DATASET\n")
 
-    # 1. Check có data không
-    query1 = "SELECT COUNT(*) FROM invoice_items;"
-    run_query(query1, "Kiểm tra số lượng invoice_items")
+    if not os.path.isdir(DATA_DIR):
+        print(f"❌ Không tìm thấy thư mục data: {DATA_DIR}")
+        return
 
-    # 2. Check doanh thu Iron Maiden
-    query2 = """
-    SELECT
-      artists.Name,
-      SUM(invoice_items.UnitPrice * invoice_items.Quantity) AS revenue
-    FROM artists
-    JOIN albums ON artists.ArtistId = albums.ArtistId
-    JOIN tracks ON albums.AlbumId = tracks.AlbumId
-    JOIN invoice_items ON tracks.TrackId = invoice_items.TrackId
-    WHERE artists.Name = 'Iron Maiden';
-    """
-    run_query(query2, "Doanh thu Iron Maiden")
+    tables = [
+        os.path.splitext(f)[0]
+        for f in os.listdir(DATA_DIR)
+        if f.lower().endswith(".parquet")
+    ]
 
-    # 3. Check full top 3 (so sánh với pipeline)
-    query3 = """
-    SELECT
-      artists.Name,
-      SUM(invoice_items.UnitPrice * invoice_items.Quantity) AS revenue
-    FROM artists
-    JOIN albums ON artists.ArtistId = albums.ArtistId
-    JOIN tracks ON albums.AlbumId = tracks.AlbumId
-    JOIN invoice_items ON tracks.TrackId = invoice_items.TrackId
-    GROUP BY artists.ArtistId, artists.Name
-    ORDER BY revenue DESC
-    LIMIT 3;
-    """
-    run_query(query3, "Top 3 nghệ sĩ doanh thu cao nhất")
+    if not tables:
+        print(f"❌ Không tìm thấy parquet files trong {DATA_DIR}")
+        return
+
+    print(f"✅ Đã phát hiện các bảng: {tables}")
+    first_table = tables[0]
+
+    query1 = f"SELECT COUNT(*) FROM {first_table}"
+    run_query(query1, f"Kiểm tra số lượng hàng trong {first_table}")
+
+    if "movies" in tables:
+        query2 = "SELECT name, year FROM movies ORDER BY year DESC LIMIT 5"
+        run_query(query2, "5 phim mới nhất")
+    else:
+        run_query(f"SELECT * FROM {first_table} LIMIT 5", f"Sample data từ bảng {first_table}")
+
+    query3 = f"SELECT * FROM {first_table} LIMIT 3"
+    run_query(query3, "Top 3 hàng đầu trong bảng đầu tiên")
 
 
 if __name__ == "__main__":

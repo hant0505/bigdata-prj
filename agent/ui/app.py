@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 st.title("🎵 SQL Intelligence")
-st.caption("Hỏi về dữ liệu Chinook bằng tiếng Việt hoặc tiếng Anh — không cần biết SQL")
+st.caption("Hỏi về dữ liệu silver parquet (MinIO) bằng tiếng Việt hoặc tiếng Anh — không cần biết SQL")
 
 # ── Sidebar: Schema viewer ────────────────────────────────────────────────────
 with st.sidebar:

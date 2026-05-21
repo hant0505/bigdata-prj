@@ -4,29 +4,16 @@ Run: python main.py
 """
 import os
 import sys
+
+# Khắc phục đường dẫn hệ thống để nhận diện đúng thư mục agent
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from crewai import Crew, Task, Process, LLM
-from langchain_google_genai import ChatGoogleGenerativeAI
+from crewai import Crew, Task, Process
 from agents.agents import create_agents
+from config import get_llm  # IMPORT ĐỘC LẬP: Tránh lỗi vòng lặp import (Circular Import)
 from dotenv import load_dotenv
+
 load_dotenv()
-
-# ── LLM Configuration ─────────────────────────────────────────────────────────────
-# Using Gemini according to SDS.
-def get_llm():
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if api_key:
-        # Solution: Use CrewAI's LLM class but declare explicitly
-        # This helps avoid Pydantic errors as it returns the correct data type CrewAI needs
-        return LLM(
-            model="gemini/gemini-2.5-flash",
-            api_key=api_key,
-            temperature=0.1
-        )
-
-    raise ValueError("API key not found!")
-
 
 # ── Create Tasks for Each Agent ──────────────────────────────────────────────────
 def create_tasks(user_question: str, planner, generator, executor, interpreter):
@@ -36,7 +23,7 @@ def create_tasks(user_question: str, planner, generator, executor, interpreter):
 User's question: "{user_question}"
 
 Task:
-1. Use the get_database_schema tool to view the Chinook schema.
+1. Use the get_database_schema tool to inspect the silver parquet schema in `data/`.
 2. Analyze the question and create a detailed query plan including:
    - Tables to use (and reasons)
    - Columns to SELECT
@@ -54,16 +41,16 @@ Task:
     task_generate = Task(
         description="""
 Based on the query plan from the Query Planner above,
-write a complete SQL SELECT statement for SQLite.
+write a complete SQL SELECT statement for Spark SQL over the silver parquet tables.
 
 Requirements:
 - Write only SELECT (no INSERT/UPDATE/DELETE)
-- Use correct table and column names according to the Chinook schema
-- JOIN on correct foreign key relationships
+- Use correct table and column names according to the silver parquet schema
+- JOIN on correct relationships between parquet tables
 - Add LIMIT 20 if no LIMIT is specified
 - Return only pure SQL
 """,
-        expected_output="A complete, executable SQL SELECT statement for SQLite",
+        expected_output="A complete, executable SQL SELECT statement for Spark SQL",
         agent=generator,
         context=[task_plan],
     )
@@ -113,15 +100,18 @@ def run_query(user_question: str) -> dict:
     print(f"🔍 QUESTION: {user_question}")
     print(f"{'='*60}\n")
 
-    llm = get_llm()
-    planner, generator, executor, interpreter = create_agents(llm)
+    # SỬA TẠI ĐÂY: Không truyền biến llm tĩnh vào hàm create_agents nữa.
+    # Toàn bộ 4 Agents bên trong file agents.py đã được cấu hình tự động gọi hàm xoay vòng key động.
+    planner, generator, executor, interpreter = create_agents()
+    
     tasks = create_tasks(user_question, planner, generator, executor, interpreter)
 
     crew = Crew(
         agents=[planner, generator, executor, interpreter],
         tasks=tasks,
-        process=Process.sequential,  # Run sequentially: plan -> generate -> execute -> interpret
+        process=Process.sequential,  # Chạy tuần tự: plan -> generate -> execute -> interpret
         verbose=True,
+        cache=False                  # Tắt bộ nhớ đệm tự động của CrewAI để tránh lỗi breakpoint
     )
 
     result = crew.kickoff()
@@ -142,9 +132,7 @@ def run_query(user_question: str) -> dict:
 if __name__ == "__main__":
     # Demo questions — change the question here to test
     demo_questions = [
-        "Top 3 artists with the highest revenue?",
-        "Which music genre has the most tracks?",
-        "Which country do customers spend the most from?",
+        "Mỗi năm có bao nhiêu bộ phim được phát hành? Chỉ hiển thị những năm có trên 1000 bộ phim.",
     ]
 
     question = demo_questions[0]

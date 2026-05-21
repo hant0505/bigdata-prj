@@ -3,15 +3,13 @@
 ## Cấu trúc project
 
 ```
-sample/
+agent/
 ├── agents/
 │   └── agents.py          # 4 agents: Planner, Generator, Executor, Interpreter
 ├── tools/
 │   └── schema_tool.py     # Tools: GetSchema, ExecuteSQL
-├── ui/
-│   └── app.py             # Streamlit UI
 ├── data/
-│   └── chinook.db         # Chinook SQLite database
+│   └── *.parquet          # Silver parquet files synced from MinIO
 ├── main.py                # Pipeline chính + CLI
 ├── requirements.txt
 └── .env                   # API keys (tự tạo)
@@ -24,7 +22,7 @@ sample/
 ```bash
 # Tạo virtual environment (khuyến nghị)
 python -m venv venv
-.venv\Scripts\activate   # Windows
+.\venv\Scripts\Activate.ps1  # Windows
 
 # Cài dependencies
 pip install -r requirements.txt
@@ -34,7 +32,7 @@ pip install -r requirements.txt
 
 ## Bước 2 — Cấu hình API Key
 
-Tạo file `.env` trong folder sample
+Tạo file `.env` trong folder agent
 
 ```bash
 # Dùng Gemini (theo SDS của nhóm)
@@ -55,7 +53,7 @@ export $(cat .env | xargs)
 ## Bước 3 — Chạy CLI (đơn giản nhất)
 
 ```bash
-cd sql_intelligence
+cd agent
 
 # Chạy với câu hỏi mặc định
 python main.py
@@ -71,7 +69,7 @@ python main.py "Khách hàng từ Brazil chi tiêu bao nhiêu?"
 ## Bước 4 — Chạy UI Streamlit
 
 ```bash
-cd sql_intelligence
+cd agent
 streamlit run ui/app.py
 ```
 
@@ -86,7 +84,7 @@ User question
      │
      ▼
 Agent 1: Schema-Aware Query Planner
-  - Đọc schema Chinook
+  - Đọc schema của silver parquet files
   - Xác định bảng, cột, JOIN path cần dùng
   - Tạo kế hoạch truy vấn
      │
@@ -97,7 +95,7 @@ Agent 2: SQL Generator
      │
      ▼
 Agent 3: SQL Executor & QA
-  - Chạy SQL trên chinook.db
+  - Chạy SQL trên silver parquet dataset
   - Nếu lỗi: báo lại Agent 2 sửa (max 3 lần)
   - Nếu OK: trả kết quả
      │
@@ -125,7 +123,7 @@ User gets answer ✅
    - Load data Parquet từ MinIO vào Spark DataFrame
 
 3. **Medallion Architecture:**
-   - Bronze layer: Raw data từ Chinook (CSV/JSON)
+   - Bronze layer: Raw source data (CSV/JSON hoặc nguồn nhập vào)
    - Silver layer: Cleaned Parquet trên MinIO
    - Gold layer: Aggregated tables cho analytics
 
@@ -137,5 +135,5 @@ User gets answer ✅
 | ----------------------------- | --------------------------------------------------- |
 | `No API key`                  | Set biến môi trường GOOGLE_API_KEY                  |
 | `ModuleNotFoundError: crewai` | Chạy `pip install crewai`                           |
-| `No such file: chinook.db`    | Chạy script tạo DB trong README                     |
+| `No parquet files found`       | Kiểm tra xem đã sync dữ liệu silver từ MinIO chưa |
 | SQL error từ Agent            | Agent sẽ tự retry, nếu vẫn lỗi thì thử câu hỏi khác |
