@@ -10,7 +10,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from crewai import Crew, Task, Process
 from agents.agents import create_agents
-from config import get_llm  # IMPORT ĐỘC LẬP: Tránh lỗi vòng lặp import (Circular Import)
 from dotenv import load_dotenv
 
 load_dotenv()

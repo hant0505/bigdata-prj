@@ -21,7 +21,10 @@ services:
       retries: 5
 
   spark-master:
-    image: bde2020/spark-master:3.3.0-hadoop3.3
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: custom-spark:3.3.0
     container_name: spark-master
     environment:
       - INIT_DAEMON_STEP=setup_spark
@@ -32,7 +35,7 @@ services:
       - imdb_net
 
   spark-client:
-    image: bde2020/spark-base:3.3.0-hadoop3.3
+    image: custom-spark:3.3.0  # Dùng lại image đã build ở trên
     container_name: spark-client
     stdin_open: true
     tty: true
@@ -80,6 +83,25 @@ services:
 networks:
   imdb_net:
     driver: bridge
+
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    image: bigdata-agent:latest
+    container_name: bigdata-agent
+    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    ports:
+      - "8501:8501"
+    depends_on:
+      - minio
+      - spark-master
+    restart: unless-stopped
+    volumes:
+      - ./agent:/app
 
 volumes:
   minio_data:
