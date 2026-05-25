@@ -6,6 +6,7 @@ against those files using PySpark.
 """
 import os
 from crewai.tools import BaseTool
+from duckdb import table
 from pydantic import Field
 
 try:
@@ -13,6 +14,16 @@ try:
 except Exception:
     SparkSession = None
 
+
+TABLES = {
+    "movies": "s3a://imdb/silver/movies",
+    "actors": "s3a://imdb/silver/actors",
+    "directors": "s3a://imdb/silver/directors",
+    "movies_genres": "s3a://imdb/silver/movies_genres",
+    "movies_directors": "s3a://imdb/silver/movies_directors",
+    "roles": "s3a://imdb/silver/roles",
+    "directors_genres": "s3a://imdb/silver/directors_genres",
+}
 
 def _repo_data_dir():
     # repo root is parent of agent/
@@ -25,7 +36,28 @@ def _get_spark_session():
     if SparkSession is None:
         return None
 
-    spark = SparkSession.builder.appName("BigdataSchemaTool").master("local[*]").getOrCreate()
+    spark = (
+        SparkSession.builder
+        .appName("BigdataSchemaTool")
+        .master(os.getenv("SPARK_MASTER_URL", "spark://spark-master:7077"))
+
+        # JAR S3A
+        .config(
+            "spark.jars",
+            "/spark/jars/hadoop-aws-3.3.2.jar,"
+            "/spark/jars/aws-java-sdk-bundle-1.11.1026.jar"
+        )
+
+        #  MinIO / S3A
+        .config("spark.hadoop.fs.s3a.endpoint", os.getenv("MINIO_ENDPOINT", "http://minio:9000"))
+        .config("spark.hadoop.fs.s3a.access.key", os.getenv("MINIO_ACCESS_KEY", "admin"))
+        .config("spark.hadoop.fs.s3a.secret.key", os.getenv("MINIO_SECRET_KEY", "12345678"))
+        .config("spark.hadoop.fs.s3a.path.style.access", "true")
+        .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+        .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
+
+        .getOrCreate()
+    )
     spark.sparkContext.setLogLevel("WARN")
     return spark
 
@@ -47,11 +79,8 @@ class GetSchemaTool(BaseTool):
             return "Không thể tạo SparkSession."
 
         schema_lines = []
-        for fname in sorted(os.listdir(data_dir)):
-            if not fname.lower().endswith(".parquet"):
-                continue
-            table = os.path.splitext(fname)[0]
-            path = os.path.join(data_dir, fname).replace('\\', '/')
+        # Sua de lay loading parquet tu MinIO thay vi local data dir
+        for table, path in TABLES.items():
             try:
                 df = spark.read.parquet(path)
                 columns = [field.name for field in df.schema.fields]
@@ -88,16 +117,12 @@ class ExecuteSQLTool(BaseTool):
             return "Không thể tạo SparkSession."
 
         try:
-            for fname in sorted(os.listdir(self.data_dir)):
-                if not fname.lower().endswith('.parquet'):
-                    continue
-                table = os.path.splitext(fname)[0]
-                path = os.path.join(self.data_dir, fname).replace('\\', '/')
+            for table, path in TABLES.items():
                 try:
                     df = spark.read.parquet(path)
                     df.createOrReplaceTempView(table)
-                except Exception:
-                    pass
+                except Exception as e:
+                    return f"ERROR loading table {table}: {e}"
 
             df_result = spark.sql(sql_clean)
             columns = df_result.columns

@@ -3,3 +3,4 @@ agent/.env
 jars/
 minio-data/
 data/
+venv/

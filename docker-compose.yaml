@@ -63,8 +63,6 @@ services:
     volumes:
       - ./minio-data:/data
    
-
-
   agent:
     build:
       context: ./agent
