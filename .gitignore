@@ -1,0 +1,5 @@
+*.log
+agent/.env
+jars/
+minio-data/
+data/
