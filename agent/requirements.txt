@@ -2,8 +2,11 @@ pydantic>=2.11.9,<2.13
 pydantic-settings>=2.0.0
 pydantic_core>=2.27.0,<2.46.0
 pysqlite3-binary
+# crewai==1.14.5
+# crewai[google-genai]==1.14.5
 crewai==1.14.5
-crewai[google-genai]==1.14.5
+crewai[litellm]==1.14.5
+litellm>=1.72.0
 google-genai>=0.1.1
 python-dotenv>=1.0.1
 streamlit>=1.35.0
