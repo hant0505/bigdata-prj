@@ -10,4 +10,5 @@ streamlit>=1.35.0
 minio>=7.2.7
 duckdb>=1.0.0
 pyspark==3.3.0
-litellm
+langchain-openai>=0.3.0
+openai>=1.30.0
