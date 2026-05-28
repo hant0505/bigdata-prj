@@ -4,7 +4,10 @@ pydantic_core>=2.27.0,<2.46.0
 
 pysqlite3-binary
 
-crewai==1.14.5
+# ÉP HẠ CẤP XUỐNG BẢN ỔN ĐỊNH:
+crewai==0.86.0
+litellm==1.52.0
+
 openai>=2.30.0,<3
 python-dotenv>=1.2.2,<2
 
