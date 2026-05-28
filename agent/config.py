@@ -24,10 +24,11 @@ class GroqLLMManager: # Đổi tên class cho đúng bản chất
         key = self.api_keys[self.index]
         self.index = (self.index + 1) % len(self.api_keys)
 
-        # CẤU HÌNH ĐỔI SANG GROQ:
+    
         return LLM(
-            model="groq/llama-3.3-70b-specdec", # Model 70B mạnh mẽ của Groq
+            model="openai/llama-3.3-70b-specdec", 
             api_key=key,
+            base_url="https://groq.com",
             temperature=0.1
         )
 
