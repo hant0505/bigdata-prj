@@ -26,8 +26,8 @@ class GroqLLMManager: # Đổi tên class cho đúng bản chất
 
     
         return LLM(
-            model="openai/custom", 
-            base_url="https://groq.com",  
+            model="groq/llama-3.3-70b-specdec", 
+            api_key=key,
             temperature=0.1
         )
 
