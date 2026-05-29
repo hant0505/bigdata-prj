@@ -61,6 +61,27 @@ def _get_spark_session():
     spark.sparkContext.setLogLevel("WARN")
     return spark
 
+#Cache schema vào RAM của các Worker Nodes để tăng tốc độ truy vấn sau này
+# 2. Hàm nạp Cache Schema từ MinIO lên RAM
+def initialize_schema_cache():
+    spark = _get_spark_session()
+    
+    if spark is None:
+        print("Lỗi: Không tìm thấy thư viện PySpark!")
+        return
+
+    print("Đang nạp Schema từ MinIO vào Cache của Spark...")
+    for table_name, s3_path in TABLES.items():
+        # Đọc qua giao thức S3A
+        df = spark.read.parquet(s3_path)
+        
+        # Đăng ký View để Agent có thể viết Spark SQL
+        df.createOrReplaceTempView(table_name)
+        
+        # Đưa vào Cache
+        df.cache() 
+        df.limit(1).count() 
+    print("Nạp Schema từ MinIO thành công! Spark Session đã sẵn sàng.")
 
 class GetSchemaTool(BaseTool):
     name: str = "get_database_schema"
@@ -96,7 +117,7 @@ class GetSchemaTool(BaseTool):
 
 class ExecuteSQLTool(BaseTool):
     name: str = "execute_sql"
-    description: str = "Thực thi câu lệnh SQL SELECT trên các parquet files trong data/ bằng PySpark"
+    description: str = "Thực thi câu lệnh SQL SELECT trên dữ liệu Silver Layer bằng PySpark"
     data_dir: str = Field(default_factory=_repo_data_dir)
 
     def _run(self, sql: str, **kwargs) -> str:

@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from crewai import Crew, Task, Process
 from agents.agents import create_agents
 from dotenv import load_dotenv
+from tools.schema_tool import initialize_schema_cache 
 
 load_dotenv()
 
@@ -132,6 +133,9 @@ def run_query(user_question: str) -> dict:
 
 # ── CLI Demo ──────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    # Khởi tạo cache schema từ MinIO trước khi chạy pipeline
+    initialize_schema_cache()
+    
     # Demo questions — change the question here to test
     demo_questions = [
         "Mỗi năm có bao nhiêu bộ phim được phát hành? Chỉ hiển thị những năm có trên 1000 bộ phim.",
