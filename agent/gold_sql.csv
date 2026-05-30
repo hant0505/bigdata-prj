@@ -1,0 +1,64 @@
+id,question,gold_sql
+1,Đếm tổng số lượng đạo diễn hiện có trong database.,SELECT COUNT(id) FROM directors;
+2,Top 3 phim có rating (rank) cao nhất?,"SELECT name, rank FROM movies ORDER BY rank DESC LIMIT 3;"
+3,Tìm họ và tên của 10 diễn viên có tên đầu (first_name) là 'John'.,"SELECT first_name, last_name FROM actors WHERE first_name = 'John' LIMIT 10;"
+4,Liệt kê 5 bộ phim có điểm đánh giá (rank) thấp nhất nhưng không bị rỗng (NOT NULL).,"SELECT name, rank FROM movies WHERE rank IS NOT NULL ORDER BY rank ASC LIMIT 5;"
+5,Liệt kê tên diễn viên và vai diễn của họ trong bộ phim có movie_id = 100.,"SELECT a.first_name, a.last_name, r.role FROM actors a JOIN roles r ON a.id = r.actor_id WHERE r.movie_id = 100;"
+6,Thống kê số lượng bộ phim của mỗi thể loại.,"SELECT genre, COUNT(movie_id) as total_movies FROM movies_genres GROUP BY genre;"
+7,Tìm họ tên các đạo diễn đã chỉ đạo bộ phim có tên là 'Fight Club'.,"SELECT d.first_name, d.last_name FROM directors d JOIN movies_directors md ON d.id = md.director_id JOIN movies m ON m.id = md.movie_id WHERE m.name = 'Fight Club';"
+8,Mỗi năm có bao nhiêu bộ phim được phát hành? Chỉ hiển thị những năm có trên 1000 bộ phim.,"SELECT year, COUNT(id) as movie_count FROM movies GROUP BY year HAVING movie_count > 1000;"
+9,Trung bình rating của các phim thể loại Drama?,SELECT AVG(m.rank) as avg_rating FROM movies m JOIN movies_genres mg ON m.id = mg.movie_id WHERE mg.genre = 'Drama';
+10,Mỗi đạo diễn đã làm bao nhiêu phim? (Top 10 đạo diễn bận rộn nhất),"SELECT d.first_name, d.last_name, COUNT(*) as num_movies FROM directors d JOIN movies_directors md ON d.id = md.director_id GROUP BY d.id, d.first_name, d.last_name ORDER BY num_movies DESC LIMIT 10;"
+11,Tìm đạo diễn có trung bình điểm đánh giá (rank) của các bộ phim do họ làm đạo diễn cao nhất.,"SELECT d.first_name, d.last_name, AVG(m.rank) as avg_rank FROM directors d JOIN movies_directors md ON d.id = md.director_id JOIN movies m ON m.id = md.movie_id WHERE m.rank IS NOT NULL GROUP BY d.id, d.first_name, d.last_name ORDER BY avg_rank DESC LIMIT 1;"
+12,Liệt kê các diễn viên chưa từng đóng bất kỳ bộ phim thể loại 'Horror' nào (Giới hạn 20).,"SELECT first_name, last_name FROM actors WHERE id NOT IN (SELECT actor_id FROM roles r JOIN movies_genres mg ON r.movie_id = mg.movie_id WHERE mg.genre = 'Horror') LIMIT 20;"
+13,Phim thuộc thể loại Action ra mắt sau năm 1990? (Top 15),"SELECT m.name, m.year FROM movies m JOIN movies_genres mg ON m.id = mg.movie_id WHERE mg.genre = 'Action' AND m.year > 1990 ORDER BY m.year DESC LIMIT 15;"
+14,Tìm top 3 đạo diễn làm nhiều phim thuộc thể loại 'Comedy' nhất.,"SELECT d.first_name, d.last_name, COUNT(md.movie_id) as comedy_count FROM directors d JOIN movies_directors md ON d.id = md.director_id JOIN movies_genres mg ON md.movie_id = mg.movie_id WHERE mg.genre = 'Comedy' GROUP BY d.id, d.first_name, d.last_name ORDER BY comedy_count DESC LIMIT 3;"
+15,Liệt kê tất cả các bộ phim ra mắt vào năm 1995.,SELECT name FROM movies WHERE year = 1995;
+16,Có bao nhiêu nam diễn viên trong cơ sở dữ liệu?,SELECT COUNT(*) FROM actors WHERE gender = 'M';
+17,Tìm thông tin bộ phim có ID là 1234.,SELECT * FROM movies WHERE id = 1234;
+18,Liệt kê danh sách các năm phát hành phim (không trùng lặp).,SELECT DISTINCT year FROM movies ORDER BY year DESC;
+19,Tìm họ và tên các diễn viên có họ là 'Pitt'.,"SELECT first_name, last_name FROM actors WHERE last_name = 'Pitt';"
+20,Có bao nhiêu vai diễn (roles) được ghi nhận trong hệ thống?,SELECT COUNT(*) FROM roles;
+21,Danh sách các đạo diễn có tên là 'Steven'.,"SELECT first_name, last_name FROM directors WHERE first_name = 'Steven';"
+22,Tìm các bộ phim có điểm đánh giá (rank) chính xác bằng 5,SELECT name FROM movies WHERE `rank` = 5;
+23,Liệt kê các bộ phim ra mắt trong khoảng từ năm 2000 đến 2005.,SELECT name FROM movies WHERE year BETWEEN 2000 AND 2005;
+24,Liệt kê tất cả các thể loại phim có trong bảng movies_genres.,SELECT DISTINCT genre FROM movies_genres;
+25,Tìm các phim có tên bắt đầu bằng chữ 'Star Wars'.,SELECT name FROM movies WHERE name LIKE 'Star Wars%';
+26,Có tổng cộng bao nhiêu bộ phim trong database?,SELECT COUNT(*) FROM movies;
+27,Tìm tên các diễn viên nữ có tên là 'Julia'.,"SELECT first_name, last_name FROM actors WHERE first_name = 'Julia' AND gender = 'F';"
+28,ID nhỏ nhất của một bộ phim trong hệ thống là gì?,SELECT MIN(id) FROM movies;
+29,Liệt kê 50 phim đầu tiên kèm theo thể loại của chúng.,"SELECT m.name, mg.genre FROM movies m JOIN movies_genres mg ON m.id = mg.movie_id LIMIT 50;"
+30,Tìm tất cả các diễn viên đã đóng trong phim 'Pulp Fiction'.,"SELECT a.first_name, a.last_name FROM actors a JOIN roles r ON a.id = r.actor_id JOIN movies m ON r.movie_id = m.id WHERE m.name = 'Pulp Fiction';"
+31,Liệt kê các bộ phim do đạo diễn 'Paul Aaron' chỉ đạo.,SELECT m.name FROM movies m JOIN movies_directors md ON m.id = md.movie_id JOIN directors d ON md.director_id = d.id WHERE d.first_name = 'Paul' AND d.last_name = 'Aaron';
+32,Tính điểm đánh giá trung bình của phim theo từng năm (Top 10 năm cao nhất).,"SELECT year, AVG(rank) as avg_rank FROM movies GROUP BY year ORDER BY avg_rank DESC LIMIT 10;"
+33,Liệt kê các vai diễn mà diễn viên 'Brad Pitt' đã từng đóng.,SELECT r.role FROM roles r JOIN actors a ON r.actor_id = a.id WHERE a.first_name = 'Brad' AND a.last_name = 'Pitt';
+34,Thể loại nào có nhiều bộ phim nhất? (Lấy top 5).,"SELECT genre, COUNT(*) as count FROM movies_genres GROUP BY genre ORDER BY count DESC LIMIT 5;"
+35,Tìm danh sách các đạo diễn đã từng làm phim thể loại 'Action'.,"SELECT DISTINCT d.first_name, d.last_name FROM directors d JOIN movies_directors md ON d.id = md.director_id JOIN movies_genres mg ON md.movie_id = mg.movie_id WHERE mg.genre = 'Action';"
+36,Liệt kê các bộ phim có trên 50 diễn viên tham gia.,SELECT m.name FROM movies m JOIN roles r ON m.id = r.movie_id GROUP BY m.id HAVING COUNT(r.actor_id) > 50;
+37,Tìm các nam diễn viên đã đóng phim thể loại 'Romance'.,"SELECT DISTINCT a.first_name, a.last_name FROM actors a JOIN roles r ON a.id = r.actor_id JOIN movies_genres mg ON r.movie_id = mg.movie_id WHERE a.gender = 'M' AND mg.genre = 'Romance';"
+38,"Trong năm 2000, mỗi thể loại có bao nhiêu bộ phim?","SELECT mg.genre, COUNT(*) as count FROM movies m JOIN movies_genres mg ON m.id = mg.movie_id WHERE m.year = 2000 GROUP BY mg.genre;"
+39,Liệt kê những đạo diễn đã làm từ 5 bộ phim trở lên.,"SELECT d.first_name, d.last_name FROM directors d JOIN movies_directors md ON d.id = md.director_id GROUP BY d.id HAVING COUNT(md.movie_id) >= 5;"
+40,Tìm các phim ra mắt năm 2000 có điểm đánh giá lớn hơn 8.,SELECT name FROM movies WHERE year = 2000 AND `rank` > 8;
+41,Liệt kê các diễn viên từng đóng vai mang tên chính mình (role = 'Himself').,"SELECT DISTINCT first_name, last_name FROM actors a JOIN roles r ON a.id = r.actor_id WHERE r.role = 'Himself';"
+42,Tìm các diễn viên đã từng đóng cả phim 'Action' lẫn 'Sci-Fi'.,SELECT a.id FROM actors a JOIN roles r ON a.id = r.actor_id JOIN movies_genres mg ON r.movie_id = mg.movie_id WHERE mg.genre = 'Action' INTERSECT SELECT a.id FROM actors a JOIN roles r ON a.id = r.actor_id JOIN movies_genres mg ON r.movie_id = mg.movie_id WHERE mg.genre = 'Sci-Fi';
+43,Tìm những đạo diễn đã từng đóng vai diễn trong chính bộ phim mình đạo diễn.,"SELECT DISTINCT d.first_name, d.last_name FROM directors d JOIN movies_directors md ON d.id = md.director_id JOIN roles r ON md.movie_id = r.movie_id JOIN actors a ON r.actor_id = a.id WHERE d.first_name = a.first_name AND d.last_name = a.last_name;"
+44,Liệt kê 20 diễn viên chưa bao giờ đóng phim thể loại 'Comedy'.,"SELECT first_name, last_name FROM actors WHERE id NOT IN (SELECT r.actor_id FROM roles r JOIN movies_genres mg ON r.movie_id = mg.movie_id WHERE mg.genre = 'Comedy') LIMIT 20;"
+45,Thể loại phim nào có điểm đánh giá trung bình cao nhất?,"SELECT mg.genre, AVG(m.rank) as avg_rank FROM movies m JOIN movies_genres mg ON m.id = mg.movie_id GROUP BY mg.genre ORDER BY avg_rank DESC LIMIT 1;"
+46,Tìm đạo diễn đã làm phim ở ít nhất 3 thể loại khác nhau.,"SELECT d.first_name, d.last_name FROM directors d JOIN movies_directors md ON d.id = md.director_id JOIN movies_genres mg ON md.movie_id = mg.movie_id GROUP BY d.id HAVING COUNT(DISTINCT mg.genre) >= 3;"
+47,Bộ phim nào có nhiều diễn viên tham gia nhất?,"SELECT m.name, COUNT(r.actor_id) as cast_size FROM movies m JOIN roles r ON m.id = r.movie_id GROUP BY m.id ORDER BY cast_size DESC LIMIT 1;"
+48,Tìm các diễn viên đã từng hợp tác với đạo diễn 'Christopher Nolan'.,"SELECT DISTINCT a.first_name, a.last_name FROM actors a JOIN roles r ON a.id = r.actor_id JOIN movies_directors md ON r.movie_id = md.movie_id JOIN directors d ON md.director_id = d.id WHERE d.first_name = 'Christopher' AND d.last_name = 'Nolan';"
+49,Liệt kê các năm mà tất cả các phim trong năm đó đều có rank > 7.,SELECT year FROM movies GROUP BY year HAVING MIN(rank) > 7;
+50,Tìm đạo diễn có tất cả các phim đều đạt rank từ 6 trở lên.,"SELECT d.first_name, d.last_name FROM directors d WHERE NOT EXISTS (SELECT 1 FROM movies_directors md JOIN movies m ON md.movie_id = m.id WHERE md.director_id = d.id AND m.rank < 6);"
+51,Tính tỷ lệ phần trăm các bộ phim có ghi nhận điểm đánh giá (rank NOT NULL).,SELECT (COUNT(`rank`)*100.0 / COUNT(*)) as percentage_ranked FROM movies;
+52,Tìm những bộ phim ra mắt năm 2000 có điểm đánh giá (rank) cao hơn điểm trung bình của tất cả phim ra mắt năm 1995.,SELECT name FROM movies WHERE year = 2000 AND rank > (SELECT AVG(rank) FROM movies WHERE year = 1995);
+53,Tìm các thể loại phim có điểm đánh giá trung bình cao hơn điểm đánh giá trung bình của thể loại 'Action'.,"SELECT mg.genre, AVG(m.rank) as avg_rank FROM movies m JOIN movies_genres mg ON m.id = mg.movie_id GROUP BY mg.genre HAVING AVG(m.rank) > (SELECT AVG(m2.rank) FROM movies m2 JOIN movies_genres mg2 ON m2.id = mg2.movie_id WHERE mg2.genre = 'Action');"
+54,Có bao nhiêu phim chưa có điểm đánh giá?,SELECT COUNT(*) FROM movies WHERE rank IS NULL;
+55,Có bao nhiêu bộ phim có tên bị trùng nhau?,SELECT COUNT(*) FROM (SELECT name FROM movies GROUP BY name HAVING COUNT(*) > 1) AS duplicated_movies
+56,Tìm 10 diễn viên có số vai diễn nhiều nhất.,"SELECT a.first_name, a.last_name, COUNT(r.role) AS role_count FROM actors a JOIN roles r ON a.id = r.actor_id GROUP BY a.id, a.first_name, a.last_name ORDER BY role_count DESC LIMIT 10"
+57,Tìm các thể loại có số phim năm 2000 nhiều hơn số phim trung bình năm 2000 của tất cả thể loại.,"SELECT mg.genre, COUNT(*) AS movie_count FROM movies_genres mg JOIN movies m ON mg.movie_id = m.id WHERE m.year = 2000 GROUP BY mg.genre HAVING COUNT(*) > (SELECT AVG(total_count) FROM (SELECT COUNT(*) AS total_count FROM movies_genres mg2 JOIN movies m2 ON mg2.movie_id = m2.id WHERE m2.year = 2000 GROUP BY mg2.genre) AS genre_counts)"
+58,Liệt kê 10 phim có nhiều đạo diễn nhất,"SELECT m.name, COUNT(md.director_id) AS director_count FROM movies m JOIN movies_directors md ON m.id = md.movie_id GROUP BY m.id, m.name ORDER BY director_count DESC LIMIT 10"
+59,Liệt kê các phim không có thể loại nào được ghi nhận,"SELECT m.id, m.name FROM movies m LEFT JOIN movies_genres mg ON m.id = mg.movie_id WHERE mg.movie_id IS NULL LIMIT 20"
+60,Tìm diễn viên tham gia nhiều thể loại phim khác nhau nhất,"SELECT a.first_name, a.last_name, COUNT(DISTINCT mg.genre) AS genre_count FROM actors a JOIN roles r ON a.id = r.actor_id JOIN movies_genres mg ON r.movie_id = mg.movie_id GROUP BY a.id, a.first_name, a.last_name ORDER BY genre_count DESC LIMIT 1"
+61,Tìm các năm có điểm đánh giá trung bình của phim lớn hơn 7,"SELECT year, AVG(rank) AS avg_rank FROM movies WHERE rank IS NOT NULL AND year IS NOT NULL GROUP BY year HAVING AVG(rank) > 7 ORDER BY avg_rank DESC"
+62,Có bao nhiêu thể loại phim khác nhau trong hệ thống?,SELECT COUNT(DISTINCT genre) FROM movies_genres;
+63,Tên của 5 bộ phim cũ nhất (năm phát hành nhỏ nhất) là gì?,SELECT name FROM movies WHERE year IS NOT NULL ORDER BY year ASC LIMIT 5;

@@ -1,12 +1,13 @@
 """
 Tool: Schema Loader for silver parquet files
-This tool exposes the schema (table names and columns) by scanning the repository
-`data/` directory for `.parquet` files and lets agents execute `SELECT` SQL
+This tool exposes the schema (table names and columns) by accessing directory for `.parquet` files and lets agents execute `SELECT` SQL
 against those files using PySpark.
 """
+from asyncio import Task
 import os
 from crewai.tools import BaseTool
 from duckdb import table
+from mcp import Tool
 from pydantic import Field
 
 try:
@@ -25,11 +26,6 @@ TABLES = {
     "directors_genres": "s3a://imdb/silver/directors_genres",
 }
 
-def _repo_data_dir():
-    # repo root is parent of agent/
-    this = os.path.abspath(os.path.dirname(__file__))
-    repo_root = os.path.dirname(os.path.dirname(this))
-    return os.path.join(repo_root, "data")
 
 
 def _get_spark_session():
@@ -61,8 +57,6 @@ def _get_spark_session():
     spark.sparkContext.setLogLevel("WARN")
     return spark
 
-#Cache schema vào RAM của các Worker Nodes để tăng tốc độ truy vấn sau này
-# 2. Hàm nạp Cache Schema từ MinIO lên RAM
 def initialize_schema_cache():
     spark = _get_spark_session()
     
@@ -72,15 +66,12 @@ def initialize_schema_cache():
 
     print("Đang nạp Schema từ MinIO vào Cache của Spark...")
     for table_name, s3_path in TABLES.items():
-        # Đọc qua giao thức S3A
+        # Đọc parquet
         df = spark.read.parquet(s3_path)
         
         # Đăng ký View để Agent có thể viết Spark SQL
         df.createOrReplaceTempView(table_name)
         
-        # Đưa vào Cache
-        df.cache() 
-        df.limit(1).count() 
     print("Nạp Schema từ MinIO thành công! Spark Session đã sẵn sàng.")
 
 class GetSchemaTool(BaseTool):
@@ -88,10 +79,6 @@ class GetSchemaTool(BaseTool):
     description: str = "Lấy schema của các bảng trong silver layer (parquet files) bằng PySpark"
 
     def _run(self, **kwargs) -> str:
-        data_dir = _repo_data_dir()
-        if not os.path.isdir(data_dir):
-            return f"Data directory not found: {data_dir}"
-
         if SparkSession is None:
             return "PySpark không được cài đặt. Vui lòng cài pyspark trong môi trường agent."
 
@@ -110,15 +97,18 @@ class GetSchemaTool(BaseTool):
                 schema_lines.append(f"{table}: ERROR reading schema ({e})")
 
         if not schema_lines:
-            return f"No parquet files found in {data_dir}"
+            return f"No parquet files found in the specified paths."
 
         return "\n".join(schema_lines)
 
-
+"""
+Hệ thống khởi tạo SparkSession một lần, 
+đăng ký các bảng Parquet thành Temp View trước khi pipeline bắt đầu. 
+Nhờ đó, các agent phía sau có thể truy vấn trực tiếp bằng Spark SQL mà không cần nạp lại toàn bộ dữ liệu từ MinIO ở mỗi bước thực thi.
+"""
 class ExecuteSQLTool(BaseTool):
     name: str = "execute_sql"
     description: str = "Thực thi câu lệnh SQL SELECT trên dữ liệu Silver Layer bằng PySpark"
-    data_dir: str = Field(default_factory=_repo_data_dir)
 
     def _run(self, sql: str, **kwargs) -> str:
         if SparkSession is None:
@@ -138,13 +128,6 @@ class ExecuteSQLTool(BaseTool):
             return "Không thể tạo SparkSession."
 
         try:
-            for table, path in TABLES.items():
-                try:
-                    df = spark.read.parquet(path)
-                    df.createOrReplaceTempView(table)
-                except Exception as e:
-                    return f"ERROR loading table {table}: {e}"
-
             df_result = spark.sql(sql_clean)
             columns = df_result.columns
             rows = df_result.limit(1000).collect()
