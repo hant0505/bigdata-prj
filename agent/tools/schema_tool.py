@@ -3,11 +3,9 @@ Tool: Schema Loader for silver parquet files
 This tool exposes the schema (table names and columns) by accessing directory for `.parquet` files and lets agents execute `SELECT` SQL
 against those files using PySpark.
 """
-from asyncio import Task
 import os
 from crewai.tools import BaseTool
 from duckdb import table
-from mcp import Tool
 from pydantic import Field
 
 try:

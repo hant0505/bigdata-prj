@@ -272,7 +272,7 @@ def run_benchmark(gold_csv: str, output_jsonl: str = "benchmark_results.jsonl", 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SQL Intelligence Main Pipeline")
     parser.add_argument("--benchmark", action="store_true", help="Chạy benchmark từ file CSV")
-    parser.add_argument("--gold-csv", type=str, default="imdb_gold.csv", help="CSV gồm id,question,gold_sql")
+    parser.add_argument("--gold-csv", type=str, default="gold_sql.csv", help="CSV gồm id,question,gold_sql")
     parser.add_argument("--output-jsonl", type=str, default="benchmark_results.jsonl", help="File lưu kết quả benchmark")
     parser.add_argument("--limit", type=int, default=None, help="Giới hạn số câu benchmark")
     parser.add_argument("--delay", type=float, default=0.0, help="Nghỉ giữa các câu benchmark")
