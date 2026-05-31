@@ -81,6 +81,7 @@ services:
       - PYSPARK_SUBMIT_ARGS=--jars /spark/jars/hadoop-aws-3.3.2.jar,/spark/jars/aws-java-sdk-bundle-1.11.1026.jar pyspark-shell
     ports:
       - "8501:8501"
+      - "4041:4040"
     depends_on:
       - minio
       - spark-master
