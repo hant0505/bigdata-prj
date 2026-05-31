@@ -156,7 +156,7 @@ write an easy-to-understand answer in English:
 
 
 # ── Pipeline Runner Function ────────────────────────────────────────────────────────
-def run_query(user_question: str) -> dict:
+def run_query(user_question: str, benchmark_mode: bool = False) -> dict:
     """
     Run the full SQL Intelligence pipeline for a question.
     Returns dict with: plan, sql, result, answer
@@ -178,9 +178,16 @@ def run_query(user_question: str) -> dict:
     
     tasks = create_tasks(user_question, planner, generator, executor, interpreter)
 
+    if benchmark_mode:
+        selected_agents = [planner, generator, executor]
+        selected_tasks = tasks[:3]
+    else:
+        selected_agents = [planner, generator, executor, interpreter]
+        selected_tasks = tasks
+    
     crew = Crew(
-        agents=[planner, generator, executor, interpreter],
-        tasks=tasks,
+        agents=selected_agents,
+        tasks=selected_tasks,
         process=Process.sequential,  # Chạy tuần tự: plan -> generate -> execute -> interpret
         verbose=True,
         cache=False                  # Tắt bộ nhớ đệm tự động của CrewAI để tránh lỗi breakpoint
@@ -204,11 +211,15 @@ def run_query(user_question: str) -> dict:
     elif tasks[1].output:
         generated_sql = tasks[1].output.raw
 
+    answer = ""
+    if not benchmark_mode:
+        answer = tasks[3].output.raw if tasks[3].output else result.raw
+
     return {
         "question": user_question,
         "sql": generated_sql,
         "result": tasks[2].output.raw if tasks[2].output else "",
-        "answer": tasks[3].output.raw if tasks[3].output else result.raw,
+        "answer": answer,
         "tasks_output": [t.output.raw if t.output else "" for t in tasks],
         "had_initial_error": SELF_CORRECTION_STATS["had_initial_error"],
         "retry_count": SELF_CORRECTION_STATS["retry_count"],
@@ -300,7 +311,8 @@ def run_benchmark(gold_csv: str, output_jsonl: str = "benchmark_results.jsonl", 
         print(f"Question: {question}")
 
         start_time = time.time()
-        result = run_query(question)
+        # result = run_query(question)
+        result = run_query(question, benchmark_mode=True) ##bỏ agent 4 để test benchmark
         time_seconds = round(time.time() - start_time, 2)
         had_initial_error = result.get("had_initial_error", False)
         retry_count = result.get("retry_count", 0)
