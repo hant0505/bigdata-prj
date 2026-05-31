@@ -107,6 +107,7 @@ Nhờ đó, các agent phía sau có thể truy vấn trực tiếp bằng Spark
 class ExecuteSQLTool(BaseTool):
     name: str = "execute_sql"
     description: str = "Thực thi câu lệnh SQL SELECT trên dữ liệu Silver Layer bằng PySpark"
+    
 
     def _run(self, sql: str, **kwargs) -> str:
         if SparkSession is None:

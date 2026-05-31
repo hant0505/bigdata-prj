@@ -8,6 +8,7 @@ import csv
 import json
 import time
 import argparse
+# from unittest import result
 # fix khi lam Dockerfile
 import pysqlite3
 sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
@@ -21,6 +22,58 @@ from dotenv import load_dotenv
 from tools.schema_tool import initialize_schema_cache, _get_spark_session
 
 load_dotenv()
+
+from pydantic import BaseModel, Field
+from typing import List
+
+
+# =====================================================================
+# 1. CẤU TRÚC ĐẦU RA (PYDANTIC) GIÚP TỐI ƯU TOKEN
+# =====================================================================
+class QueryPlanOutput(BaseModel):
+    tables: List[str] = Field(description="Danh sách các bảng cần sử dụng")
+    join_paths: str = Field(description="Logic JOIN giữa các bảng")
+    conditions: str = Field(description="Điều kiện lọc (WHERE)")
+
+class SQLOutput(BaseModel):
+    sql: str = Field(description="Câu lệnh Spark SQL SELECT hoàn chỉnh, không có markdown.")
+
+# =====================================================================
+# 2. CƠ CHẾ GUARDRAIL & ĐO LƯỜNG SELF-CORRECTION
+# =====================================================================
+SELF_CORRECTION_STATS = {
+    "had_initial_error": False,
+    "retry_count": 0,
+}
+
+def validate_sql_execution(task_output: str):
+    """
+    Hàm Guardrail kiểm duyệt kết quả chạy SQL của Agent 3.
+    """
+    global SELF_CORRECTION_STATS
+    output = str(task_output)
+    
+    has_error = (
+        "SQL ERROR" in output
+        or "ERROR:" in output
+        or "Table or view not found" in output
+        or "cannot resolve" in output
+        or "AnalysisException" in output
+        or "ParseException" in output
+    )
+
+    if has_error:
+        SELF_CORRECTION_STATS["had_initial_error"] = True
+        SELF_CORRECTION_STATS["retry_count"] += 1
+        
+        feedback = (
+            f"Spark SQL execution failed with error: {output}\n"
+            "Please investigate the root cause. "
+            "Then, rewrite the SQL query and use the 'execute_sql' tool to run it again."
+        )
+        return (False, feedback) 
+    
+    return (True, output)
 
 # ── Create Tasks for Each Agent ──────────────────────────────────────────────────
 def create_tasks(user_question: str, planner, generator, executor, interpreter):
@@ -43,6 +96,7 @@ Task:
             "list of tables, columns, JOIN paths, filtering conditions, aggregations"
         ),
         agent=planner,
+        output_pydantic=QueryPlanOutput # <--- THÊM DÒNG NÀY Ép kiểu Pydantic
     )
 
     task_generate = Task(
@@ -60,6 +114,7 @@ Requirements:
         expected_output="A complete, executable SQL SELECT statement for Spark SQL",
         agent=generator,
         context=[task_plan],
+        output_pydantic=SQLOutput # <--- THÊM DÒNG NÀY Ép kiểu Pydantic
     )
 
     task_execute = Task(
@@ -76,6 +131,9 @@ Return: The executed SQL + full results from the database
         expected_output="SQL execution results: the SQL statement + data returned from the database",
         agent=executor,
         context=[task_generate],
+        # --- Selft-correctness ---
+        guardrail=validate_sql_execution, 
+        guardrail_max_retries=3 # Tối đa 3 lần tự sửa lỗi nếu guardrail trả về False
     )
 
     task_interpret = Task(
@@ -103,9 +161,16 @@ def run_query(user_question: str) -> dict:
     Run the full SQL Intelligence pipeline for a question.
     Returns dict with: plan, sql, result, answer
     """
+
+    global SELF_CORRECTION_STATS
+    
+    # RESET lại thống kê trước khi bắt đầu câu hỏi mới
+    SELF_CORRECTION_STATS["had_initial_error"] = False
+    SELF_CORRECTION_STATS["retry_count"] = 0
     print(f"\n{'='*60}")
     print(f"🔍 QUESTION: {user_question}")
     print(f"{'='*60}\n")
+
 
     # SỬA TẠI ĐÂY: Không truyền biến llm tĩnh vào hàm create_agents nữa.
     # Toàn bộ 4 Agents bên trong file agents.py đã được cấu hình tự động gọi hàm xoay vòng key động.
@@ -123,17 +188,31 @@ def run_query(user_question: str) -> dict:
 
     result = crew.kickoff()
 
-    print(f"\n{'='*60}")
-    print("✅ FINAL RESULT:")
-    print(f"{'='*60}")
-    print(result.raw)
+    # print(f"\n{'='*60}")
+    # print("✅ FINAL RESULT:")
+    # print(f"{'='*60}")
+    # print(result.raw)
+
+    # return {
+    #     "question": user_question,
+    #     "answer": result.raw,
+    #     "tasks_output": [t.output.raw if t.output else "" for t in tasks],
+    # }
+    generated_sql = ""
+    if tasks[1].output and getattr(tasks[1].output, "pydantic", None):
+        generated_sql = tasks[1].output.pydantic.sql
+    elif tasks[1].output:
+        generated_sql = tasks[1].output.raw
 
     return {
         "question": user_question,
-        "answer": result.raw,
+        "sql": generated_sql,
+        "result": tasks[2].output.raw if tasks[2].output else "",
+        "answer": tasks[3].output.raw if tasks[3].output else result.raw,
         "tasks_output": [t.output.raw if t.output else "" for t in tasks],
+        "had_initial_error": SELF_CORRECTION_STATS["had_initial_error"],
+        "retry_count": SELF_CORRECTION_STATS["retry_count"],
     }
-
 
 # ── Benchmark Utilities ────────────────────────────────────────────────────────
 def clean_sql(sql: str) -> str:
@@ -179,7 +258,7 @@ def append_jsonl(path: str, record: dict):
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def run_benchmark(gold_csv: str, output_jsonl: str = "benchmark_results.jsonl", limit=None, delay: float = 0.0):
+def run_benchmark(gold_csv: str, output_jsonl: str = "benchmark_results.jsonl", limit=None, delay: float = 0.0, offset: int = 0):
     """
     Run benchmark from CSV file with columns: id, question, gold_sql.
     Execution Accuracy = compare Spark result of predicted SQL and gold SQL.
@@ -195,12 +274,19 @@ def run_benchmark(gold_csv: str, output_jsonl: str = "benchmark_results.jsonl", 
     with open(gold_csv, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
+    if offset:
+        rows = rows[offset:]
 
     if limit:
         rows = rows[:limit]
 
     success_count = 0
     correct_count = 0
+    initial_errors = 0
+    repaired_correct_count = 0
+    # NEW
+    all_times = []
+
 
     for i, row in enumerate(rows, 1):
         question = row.get("question", "").strip()
@@ -216,9 +302,14 @@ def run_benchmark(gold_csv: str, output_jsonl: str = "benchmark_results.jsonl", 
         start_time = time.time()
         result = run_query(question)
         time_seconds = round(time.time() - start_time, 2)
+        had_initial_error = result.get("had_initial_error", False)
+        retry_count = result.get("retry_count", 0)
+        # NEW
+        all_times.append(time_seconds)
 
-        tasks_output = result.get("tasks_output", [])
-        pred_sql = clean_sql(tasks_output[1]) if len(tasks_output) > 1 else ""
+        # tasks_output = result.get("tasks_output", [])
+        # pred_sql = clean_sql(tasks_output[1]) if len(tasks_output) > 1 else "" -->pydantic
+        pred_sql = clean_sql(result.get("sql", ""))
 
         pred_rows = run_sql_raw(pred_sql) if pred_sql else "ERROR: Empty predicted SQL"
         gold_rows = run_sql_raw(gold_sql) if gold_sql else "ERROR: Empty gold SQL"
@@ -232,6 +323,11 @@ def run_benchmark(gold_csv: str, output_jsonl: str = "benchmark_results.jsonl", 
             success_count += 1
         if is_correct:
             correct_count += 1
+        if had_initial_error:
+            initial_errors += 1
+
+        if had_initial_error and is_correct:
+            repaired_correct_count += 1
 
         record = {
             "id": qid,
@@ -244,6 +340,9 @@ def run_benchmark(gold_csv: str, output_jsonl: str = "benchmark_results.jsonl", 
             "answer": result.get("answer", ""),
             "pred_rows_preview": str(pred_rows)[:500],
             "gold_rows_preview": str(gold_rows)[:500],
+            "had_initial_error": had_initial_error,
+            "retry_count": retry_count,
+            "repaired_correct": had_initial_error and is_correct,
         }
         append_jsonl(output_jsonl, record)
 
@@ -260,12 +359,33 @@ def run_benchmark(gold_csv: str, output_jsonl: str = "benchmark_results.jsonl", 
             time.sleep(delay)
 
     total = len(rows)
+
+    # NEW
+    avg_time = round(sum(all_times) / len(all_times), 2) if all_times else 0
+
     print(f"\n{'='*60}")
     print("📊 BENCHMARK SUMMARY")
     print(f"{'='*60}")
     print(f"Answer Rate: {success_count}/{total} ({(success_count/total)*100:.1f}%)")
     print(f"Execution Accuracy: {correct_count}/{total} ({(correct_count/total)*100:.1f}%)")
+    # NEW
+    print(f"Average Latency: {avg_time}s")
+    print(f"Total Benchmark Time: {round(sum(all_times), 2)}s")
+
+    self_correction_rate = (
+    repaired_correct_count / initial_errors * 100
+    if initial_errors > 0
+    else 0.0
+    )
+
+    print(
+        f"Self-correction Success Rate: "
+        f"{repaired_correct_count}/{initial_errors} "
+        f"({self_correction_rate:.1f}%)"
+    )
+
     print(f"Detailed results saved to: {output_jsonl}")
+
 
 
 # ── CLI Demo / Benchmark ──────────────────────────────────────────────────────────────────
@@ -274,6 +394,8 @@ if __name__ == "__main__":
     parser.add_argument("--benchmark", action="store_true", help="Chạy benchmark từ file CSV")
     parser.add_argument("--gold-csv", type=str, default="gold_sql.csv", help="CSV gồm id,question,gold_sql")
     parser.add_argument("--output-jsonl", type=str, default="benchmark_results.jsonl", help="File lưu kết quả benchmark")
+        # THÊM THAM SỐ NÀY để nhảy cóc vị trí bắt đầu
+    parser.add_argument("--offset", type=int, default=0, help="Vị trí dòng bắt đầu chạy trong CSV (0-indexed)")
     parser.add_argument("--limit", type=int, default=None, help="Giới hạn số câu benchmark")
     parser.add_argument("--delay", type=float, default=0.0, help="Nghỉ giữa các câu benchmark")
     parser.add_argument("question", nargs="*", help="Câu hỏi test nhanh")
@@ -288,6 +410,7 @@ if __name__ == "__main__":
             output_jsonl=args.output_jsonl,
             limit=args.limit,
             delay=args.delay,
+            offset=args.offset,
         )
     else:
         # Demo questions — change the question here to test
