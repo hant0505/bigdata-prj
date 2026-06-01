@@ -25,8 +25,7 @@ load_dotenv()
 
 from pydantic import BaseModel, Field
 from typing import List
-from typing import Tuple, Any
-from crewai import TaskOutput
+
 
 # =====================================================================
 # 1. CẤU TRÚC ĐẦU RA (PYDANTIC) GIÚP TỐI ƯU TOKEN
