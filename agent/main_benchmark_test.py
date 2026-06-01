@@ -25,7 +25,8 @@ load_dotenv()
 
 from pydantic import BaseModel, Field
 from typing import List
-
+from typing import Tuple, Any
+from crewai import TaskOutput
 
 # =====================================================================
 # 1. CẤU TRÚC ĐẦU RA (PYDANTIC) GIÚP TỐI ƯU TOKEN
@@ -51,7 +52,7 @@ def validate_sql_execution(task_output: str):
     Hàm Guardrail kiểm duyệt kết quả chạy SQL của Agent 3.
     """
     global SELF_CORRECTION_STATS
-    output = str(task_output)
+    output = getattr(task_output, 'raw', str(task_output))
     
     has_error = (
         "SQL ERROR" in output
@@ -125,14 +126,14 @@ Execute the generated SQL statement:
    - If there is a SQL error: describe the error in detail
    - If the result is empty (0 rows): note it
    - If successful: confirm and return the results
-
+    * If there is a SQL error: Do NOT return the error as your final answer. You MUST analyze the root cause, rewrite the SQL query correctly, and use the 'execute_sql' tool to run it again until it succeeds.
 Return: The executed SQL + full results from the database
 """,
         expected_output="SQL execution results: the SQL statement + data returned from the database",
         agent=executor,
         context=[task_generate],
         # --- Selft-correctness ---
-        guardrail=validate_sql_execution, 
+        guardrails=[validate_sql_execution],
         guardrail_max_retries=3 # Tối đa 3 lần tự sửa lỗi nếu guardrail trả về False
     )
 
