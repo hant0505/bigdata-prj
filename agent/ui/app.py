@@ -70,17 +70,27 @@ with st.expander("📋 Xem cấu trúc Database Schema (IMDb)", expanded=False):
 
 # ── Input ─────────────────────────────────────────────────────────────────────
 default_val = st.session_state.pop("input_question", "")
-user_question = st.text_input(
-    "💬 Nhập câu hỏi của bạn:",
-    value=default_val,
-    placeholder="VD: Top 5 diễn viên tham gia nhiều bộ phim nhất?",
-)
 
-col1, col2 = st.columns([1, 5])
+col1, col2 = st.columns([3, 1])
+
 with col1:
-    run_btn = st.button("🚀 Chạy", type="primary", use_container_width=True)
+    with st.form("query_form", clear_on_submit=False):
+        user_question = st.text_input(
+            "💬 Nhập câu hỏi của bạn:",
+            value=default_val,
+            placeholder="VD: Top 5 diễn viên tham gia nhiều bộ phim nhất?",
+        )
+
+        run_btn = st.form_submit_button(
+            "🚀 Chạy",
+            type="primary",
+            use_container_width=True,
+        )
+
 with col2:
-    if st.button("🗑️ Xóa lịch sử", use_container_width=False):
+    st.write("")
+    st.write("")
+    if st.button("🗑️ Xóa lịch sử", use_container_width=True):
         st.session_state.history = []
         st.session_state.selected_history_index = None
         st.rerun()
