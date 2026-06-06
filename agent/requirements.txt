@@ -3,8 +3,10 @@ google-genai
 python-dotenv
 streamlit
 pydantic
-<<<<<<< HEAD
 minio
 duckdb
-=======
->>>>>>> ce458b2f9db970811087f90bf5efdbae6b84f426
+pyspark
+fastapi
+uvicorn[standard]
+requests
+litellm

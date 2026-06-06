@@ -5,6 +5,12 @@ Run: python main.py
 import os
 import sys
 
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace")
+
 # Khắc phục đường dẫn hệ thống để nhận diện đúng thư mục agent
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -96,7 +102,7 @@ def run_query(user_question: str) -> dict:
     Returns dict with: plan, sql, result, answer
     """
     print(f"\n{'='*60}")
-    print(f"🔍 QUESTION: {user_question}")
+    print(f"QUESTION: {user_question}")
     print(f"{'='*60}\n")
 
     # SỬA TẠI ĐÂY: Không truyền biến llm tĩnh vào hàm create_agents nữa.
@@ -116,7 +122,7 @@ def run_query(user_question: str) -> dict:
     result = crew.kickoff()
 
     print(f"\n{'='*60}")
-    print("✅ FINAL RESULT:")
+    print("FINAL RESULT:")
     print(f"{'='*60}")
     print(result.raw)
 

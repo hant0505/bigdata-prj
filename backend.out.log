@@ -1,0 +1,418 @@
+INFO:     127.0.0.1:61443 - "GET /health HTTP/1.1" 200 OK
+
+============================================================
+QUESTION: What are the top 5 highest-rated movies?
+============================================================
+
+┌───────────────────────── 🚀 Crew Execution Started ─────────────────────────┐
+│                                                                             │
+│  Crew Execution Started                                                     │
+│  Name: crew                                                                 │
+│  ID: 1d7db48f-a221-4d84-b1f5-7eba7ce14d44                                   │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────── 📋 Task Started ──────────────────────────────┐
+│                                                                             │
+│  Task Started                                                               │
+│  Name:                                                                      │
+│  User's question: "What are the top 5 highest-rated movies?"                │
+│                                                                             │
+│  Task:                                                                      │
+│  1. Use the get_database_schema tool to inspect the silver parquet schema   │
+│  in `data/`.                                                                │
+│  2. Analyze the question and create a detailed query plan including:        │
+│     - Tables to use (and reasons)                                           │
+│     - Columns to SELECT                                                     │
+│     - Filtering conditions (WHERE)                                          │
+│     - JOIN paths (which tables JOIN via which keys)                         │
+│     - Aggregations: GROUP BY, ORDER BY, LIMIT                               │
+│                                                                             │
+│  ID: 5cf01b2b-b247-4bcf-ad34-925522d84167                                   │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────── 🤖 Agent Started ──────────────────────────────┐
+│                                                                             │
+│  Agent: Schema-Aware Query Planner                                          │
+│                                                                             │
+│  Task:                                                                      │
+│  User's question: "What are the top 5 highest-rated movies?"                │
+│                                                                             │
+│  Task:                                                                      │
+│  1. Use the get_database_schema tool to inspect the silver parquet schema   │
+│  in `data/`.                                                                │
+│  2. Analyze the question and create a detailed query plan including:        │
+│     - Tables to use (and reasons)                                           │
+│     - Columns to SELECT                                                     │
+│     - Filtering conditions (WHERE)                                          │
+│     - JOIN paths (which tables JOIN via which keys)                         │
+│     - Aggregations: GROUP BY, ORDER BY, LIMIT                               │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────── 🔧 Tool Execution Started (#1) ───────────────────────┐
+│                                                                             [32mTool get_database_schema executed with result: movies: ['id', 'name', 'year', 'rank']
+movies_directors: ['director_id', 'movie_id']
+movies_genres: ['movie_id', 'genre']...[0m
+│
+│  Tool: get_database_schema                                                  │
+│  Args: {'table_filter': 'movies'}                                           │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────── ✅ Tool Execution Completed (#1) ──────────────────────┐
+│                                                                             │
+│  Tool Completed                                                             │
+│  Tool: get_database_schema                                                  │
+│  Output: movies: ['id', 'name', 'year', 'rank']                             │
+│  movies_directors: ['director_id', 'movie_id']                              │
+│  movies_genres: ['movie_id', 'genre']                                       │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+[35m[Finalize] todos_count=0, todos_with_results=0[0m
+┌─────────────────────────── ✅ Agent Final Answer ───────────────────────────┐
+│                                                                             │
+│  Agent: Schema-Aware Query Planner                                          │
+│                                                                             │
+│  Final Answer:                                                              │
+│  To answer the user's question, "What are the top 5 highest-rated           │
+│  movies?", we need to create a detailed query plan.                         │
+│                                                                             │
+│  1. **Tables to use:**                                                      │
+│     - `movies`: This table is necessary because it contains the movie       │
+│  names and their corresponding ratings (rank).                              │
+│     - `movies_directors` and `movies_genres` are not necessary for this     │
+│  query as we are only interested in the movie names and their ratings.      │
+│                                                                             │
+│  2. **Columns to SELECT:**                                                  │
+│     - `name`: To retrieve the names of the movies.                          │
+│     - `rank`: To retrieve the ratings of the movies.                        │
+│                                                                             │
+│  3. **Filtering conditions (WHERE):**                                       │
+│     - None: We are not filtering the movies based on any specific           │
+│  condition other than their ratings.                                        │
+│                                                                             │
+│  4. **JOIN paths:**                                                         │
+│     - None: We do not need to join any tables for this query.               │
+│                                                                             │
+│  5. **Aggregations:**                                                       │
+│     - **ORDER BY:** We need to order the movies by their ratings in         │
+│  descending order (highest-rated first).                                    │
+│     - **LIMIT:** We need to limit the output to the top 5 highest-rated     │
+│  movies.                                                                    │
+│                                                                             │
+│  Therefore, the structured query plan is:                                   │
+│  - **Tables:** `movies`                                                     │
+│  - **Columns:** `name`, `rank`                                              │
+│  - **WHERE:** None                                                          │
+│  - **JOIN paths:** None                                                     │
+│  - **Aggregations:** ORDER BY `rank` DESC, LIMIT 5                          │
+│                                                                             │
+│  This query plan will provide the names and ratings of the top 5            │
+│  highest-rated movies.                                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────── 📋 Task Completion ─────────────────────────────┐
+│                                                                             │
+│  Task Completed                                                             │
+│  Name:                                                                      │
+│  User's question: "What are the top 5 highest-rated movies?"                │
+│                                                                             │
+│  Task:                                                                      │
+│  1. Use the get_database_schema tool to inspect the silver parquet schema   │
+│  in `data/`.                                                                │
+│  2. Analyze the question and create a detailed query plan including:        │
+│     - Tables to use (and reasons)                                           │
+│     - Columns to SELECT                                                     │
+│     - Filtering conditions (WHERE)                                          │
+│     - JOIN paths (which tables JOIN via which keys)                         │
+│     - Aggregations: GROUP BY, ORDER BY, LIMIT                               │
+│                                                                             │
+│  Agent: Schema-Aware Query Planner                                          │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────── 📋 Task Started ──────────────────────────────┐
+│                                                                             │
+│  Task Started                                                               │
+│  Name:                                                                      │
+│  Based on the query plan from the Query Planner above,                      │
+│  write a complete SQL SELECT statement for Spark SQL over the silver        │
+│  parquet tables.                                                            │
+│                                                                             │
+│  Requirements:                                                              │
+│  - Write only SELECT (no INSERT/UPDATE/DELETE)                              │
+│  - Use correct table and column names according to the silver parquet       │
+│  schema                                                                     │
+│  - JOIN on correct relationships between parquet tables                     │
+│  - Add LIMIT 20 if no LIMIT is specified                                    │
+│  - Return only pure SQL                                                     │
+│                                                                             │
+│  ID: 6124320c-4dd6-46aa-b978-fec9bb7f5539                                   │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────── 🤖 Agent Started ──────────────────────────────┐
+│                                                                             │
+│  Agent: SQL Generator                                                       │
+│                                                                             │
+│  Task:                                                                      │
+│  Based on the query plan from the Query Planner above,                      │
+│  write a complete SQL SELECT statement for Spark SQL over the silver        │
+│  parquet tables.                                                            │
+│                                                                             │
+│  Requirements:                                                              │
+│  - Write only SELECT (no INSERT/UPDATE/DELETE)                              │
+│  - Use correct table and column names according to the silver parquet       │
+│  schema                                                                     │
+│  - JOIN on correct relationships between parquet tables                     │
+│  - Add LIMIT 20 if no LIMIT is specified                                    │
+│  - Return only pure SQL                                                     │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+
+[35m[Finalize] todos_count=0, todos_with_results=0[0m
+┌─────────────────────────── ✅ Agent Final Answer ───────────────────────────┐
+│                                                                             │
+│  Agent: SQL Generator                                                       │
+│                                                                             │
+│  Final Answer:                                                              │
+│  SELECT name, rank FROM movies ORDER BY rank DESC LIMIT 5                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────── 📋 Task Completion ─────────────────────────────┐
+│                                                                             │
+│  Task Completed                                                             │
+│  Name:                                                                      │
+│  Based on the query plan from the Query Planner above,                      │
+│  write a complete SQL SELECT statement for Spark SQL over the silver        │
+│  parquet tables.                                                            │
+│                                                                             │
+│  Requirements:                                                              │
+│  - Write only SELECT (no INSERT/UPDATE/DELETE)                              │
+│  - Use correct table and column names according to the silver parquet       │
+│  schema                                                                     │
+│  - JOIN on correct relationships between parquet tables                     │
+│  - Add LIMIT 20 if no LIMIT is specified                                    │
+│  - Return only pure SQL                                                     │
+│                                                                             │
+│  Agent: SQL Generator                                                       │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────── 📋 Task Started ──────────────────────────────┐
+│                                                                             │
+│  Task Started                                                               │
+│  Name:                                                                      │
+│  Execute the generated SQL statement:                                       │
+│  1. Use the execute_sql tool to run the SQL query                           │
+│  2. Check the results:                                                      │
+│     - If there is a SQL error: describe the error in detail                 │
+│     - If the result is empty (0 rows): note it                              │
+│     - If successful: confirm and return the results                         │
+│                                                                             │
+│  Return: The executed SQL + full results from the database                  │
+│                                                                             │
+│  ID: 801149b8-2c55-499b-8e34-8450bbd5feff                                   │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────── 🤖 Agent Started ──────────────────────────────┐
+│                                                                             │
+│  Agent: SQL Executor and QA                                                 │
+│                                                                             │
+│  Task:                                                                      │
+│  Execute the generated SQL statement:                                       │
+│  1. Use the execute_sql tool to run the SQL query                           │
+│  2. Check the results:                                                      │
+│     - If there is a SQL error: describe the error in detail                 │
+│     - If the result is empty (0 rows): note it                              │
+│     - If successful: confirm and return the results                         │
+│                                                                             │
+│  Return: The executed SQL + full results from the database                  │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌────────────────────── 🔧 Tool Execution Started (#1) ───────────────────────┐
+│                                                                             │
+│  Tool: execute_sql                                                          │
+│  Args: {'sql': 'SELECT name, rank FROM movies ORDER BY rank DESC LIMIT 5'}  │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+[32mTool execute_sql executed with result: Columns: ['name', 'rank']
+Rows (5 returned, showing 5):
+                                   name  rank
+Atunci i-am condamnat pe toti la moarte   9.9
+                          Clearing, The   9.9
+      ...[0m
+┌───────────────────── ✅ Tool Execution Completed (#1) ──────────────────────┐
+│                                                                             │
+│  Tool Completed                                                             │
+│  Tool: execute_sql                                                          │
+│  Output: Columns: ['name', 'rank']                                          │
+│  Rows (5 returned, showing 5):                                              │
+│                                     name  rank                              │
+│  Atunci i-am condamnat pe toti la moarte   9.9                              │
+│                            Clearing, The   9.9                              │
+│                    Complex Sessions, The   9.9                              │
+│                      Devil's Circus, The   9.9                              │
+│                        Distinto amanecer   9.9                              │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+[35m[Finalize] todos_count=0, todos_with_results=0[0m
+┌─────────────────────────── ✅ Agent Final Answer ───────────────────────────┐
+│                                                                             │
+│  Agent: SQL Executor and QA                                                 │
+│                                                                             │
+│  Final Answer:                                                              │
+│  SQL execution results:                                                     │
+│  SELECT name, rank FROM movies ORDER BY rank DESC LIMIT 5                   │
+│                                     name  rank                              │
+│  Atunci i-am condamnat pe toti la moarte   9.9                              │
+│                            Clearing, The   9.9                              │
+│                    Complex Sessions, The   9.9                              │
+│                      Devil's Circus, The   9.9                              │
+│                        Distinto amanecer   9.9                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────── 📋 Task Completion ─────────────────────────────┐
+│                                                                             │
+│  Task Completed                                                             │
+│  Name:                                                                      │
+│  Execute the generated SQL statement:                                       │
+│  1. Use the execute_sql tool to run the SQL query                           │
+│  2. Check the results:                                                      │
+│     - If there is a SQL error: describe the error in detail                 │
+│     - If the result is empty (0 rows): note it                              │
+│     - If successful: confirm and return the results                         │
+│                                                                             │
+│  Return: The executed SQL + full results from the database                  │
+│                                                                             │
+│  Agent: SQL Executor and QA                                                 │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────── 📋 Task Started ──────────────────────────────┐
+│                                                                             │
+│  Task Started                                                               │
+│  Name:                                                                      │
+│  Original user question: "What are the top 5 highest-rated movies?"         │
+│                                                                             │
+│  Based on the results from the SQL Executor above,                          │
+│  write an easy-to-understand answer in English:                             │
+│  1. Answer the question directly                                            │
+│  2. Present the main results (top items, important numbers)                 │
+│  3. Provide insights if any                                                 │
+│  4. Keep it concise, succinct, and friendly                                 │
+│                                                                             │
+│  ID: 54b67af7-da01-4f89-93c6-c2e7b874c420                                   │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────── 🤖 Agent Started ──────────────────────────────┐
+│                                                                             │
+│  Agent: Data Interpreter                                                    │
+│                                                                             │
+│  Task:                                                                      │
+│  Original user question: "What are the top 5 highest-rated movies?"         │
+│                                                                             │
+│  Based on the results from the SQL Executor above,                          │
+│  write an easy-to-understand answer in English:                             │
+│  1. Answer the question directly                                            │
+│  2. Present the main results (top items, important numbers)                 │
+│  3. Provide insights if any                                                 │
+│  4. Keep it concise, succinct, and friendly                                 │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+[35m[Finalize] todos_count=0, todos_with_results=0[0m
+┌─────────────────────────── ✅ Agent Final Answer ───────────────────────────┐
+│                                                                             │
+│  Agent: Data Interpreter                                                    │
+│                                                                             │
+│  Final Answer:                                                              │
+│  The top 5 highest-rated movies are all tied with an impressive rating of   │
+│  9.9. The movies that make up this exclusive list are: "Atunci i-am         │
+│  condamnat pe toti la moarte", "Clearing, The", "Complex Sessions, The",    │
+│  "Devil's Circus, The", and "Distinto amanecer". It's interesting to note   │
+│  that all of these movies have achieved the same high rating, suggesting    │
+│  that they are all highly acclaimed and worth watching. If you're looking   │
+│  for a great movie, you can't go wrong with any of these top-rated          │
+│  options.                                                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────── 📋 Task Completion ─────────────────────────────┐
+│                                                                             │
+│  Task Completed                                                             │
+│  Name:                                                                      │
+│  Original user question: "What are the top 5 highest-rated movies?"         │
+│                                                                             │
+│  Based on the results from the SQL Executor above,                          │
+│  write an easy-to-understand answer in English:                             │
+│  1. Answer the question directly                                            │
+│  2. Present the main results (top items, important numbers)                 │
+│  3. Provide insights if any                                                 │
+│  4. Keep it concise, succinct, and friendly                                 │
+│                                                                             │
+│  Agent: Data Interpreter                                                    │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────── Crew Completion ──────────────────────────────┐
+
+============================================================
+FINAL RESULT:
+============================================================
+The top 5 highest-rated movies are all tied with an impressive rating of 9.9. The movies that make up this exclusive list are: "Atunci i-am condamnat pe toti la moarte", "Clearing, The", "Complex Sessions, The", "Devil's Circus, The", and "Distinto amanecer". It's interesting to note that all of these movies have achieved the same high rating, suggesting that they are all highly acclaimed and worth watching. If you're looking for a great movie, you can't go wrong with any of these top-rated options.
+│INFO:     127.0.0.1:61454 - "POST /query HTTP/1.1" 200 OK
+                                                                             │
+│  Crew Execution Completed                                                   │
+│  Name: crew                                                                 │
+│  ID: 1d7db48f-a221-4d84-b1f5-7eba7ce14d44                                   │
+│  Final Output: The top 5 highest-rated movies are all tied with an          │
+│  impressive rating of 9.9. The movies that make up this exclusive list      │
+│  are: "Atunci i-am condamnat pe toti la moarte", "Clearing, The", "Complex  │
+│  Sessions, The", "Devil's Circus, The", and "Distinto amanecer". It's       │
+│  interesting to note that all of these movies have achieved the same high   │
+│  rating, suggesting that they are all highly acclaimed and worth watching.  │
+│  If you're looking for a great movie, you can't go wrong with any of these  │
+│  top-rated options.                                                         │
+│                                                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────── Tracing Status ───────────────────────────────┐
+│                                                                             │
+│  Info: Tracing is disabled.                                                 │
+│                                                                             │
+│  To enable tracing, do any one of these:                                    │
+│  • Set tracing=True in your Crew/Flow code                                  │
+│  • Set CREWAI_TRACING_ENABLED=true in your project's .env file              │
+│  • Run: crewai traces enable                                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘

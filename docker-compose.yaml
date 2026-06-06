@@ -80,9 +80,24 @@ services:
     networks:
       - imdb_net
 
-networks:
-  imdb_net:
-    driver: bridge
+  backend:
+    image: python:3.11-slim
+    container_name: bigdata-backend
+    working_dir: /workspace
+    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
+      - PYTHONPATH=/workspace/agent
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/workspace
+    command: >
+      sh -c "pip install --no-cache-dir -r agent/requirements.txt &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    networks:
+      - imdb_net
 
   agent:
     build:
@@ -93,15 +108,26 @@ networks:
     env_file: .env
     environment:
       - PYTHONUNBUFFERED=1
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - PYTHONIOENCODING=utf-8
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - API_KEY=${API_KEY:-}
+      - BACKEND_URL=http://backend:8000
     ports:
       - "8501:8501"
     depends_on:
+      - backend
       - minio
       - spark-master
     restart: unless-stopped
     volumes:
       - ./agent:/app
+    command: streamlit run ui/app.py --server.address 0.0.0.0 --server.port 8501
+    networks:
+      - imdb_net
+
+networks:
+  imdb_net:
+    driver: bridge
 
 volumes:
   minio_data:
