@@ -4,3 +4,5 @@ INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 D:\Programs\anaconda3\Lib\site-packages\pandas\core\computation\expressions.py:22: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.10.1' currently installed).
   from pandas.core.computation.check import NUMEXPR_INSTALLED
+Error executing listener call_llm_native_tools: litellm.RateLimitError: RateLimitError: GroqException - {"error":{"message":"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01ksza5r07ekc99mcds0kny0gt` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 10296, Requested 2112. Please try again in 2.04s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+

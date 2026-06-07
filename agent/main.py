@@ -81,13 +81,14 @@ Return: The executed SQL + full results from the database
 Original user question: "{user_question}"
 
 Based on the results from the SQL Executor above,
-write an easy-to-understand answer in English:
+write an easy-to-understand answer in Vietnamese:
 1. Answer the question directly
 2. Present the main results (top items, important numbers)
 3. Provide insights if any
 4. Keep it concise, succinct, and friendly
+5. Use natural Vietnamese for the final response. Keep table names, SQL keywords, and proper nouns unchanged when needed.
 """,
-        expected_output="An easy-to-understand English answer for the end user",
+        expected_output="An easy-to-understand Vietnamese answer for the end user",
         agent=interpreter,
         context=[task_execute],
     )

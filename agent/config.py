@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 AGENT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = AGENT_DIR.parent
 
-load_dotenv(REPO_ROOT / ".env")
-load_dotenv(AGENT_DIR / ".env")
+load_dotenv(REPO_ROOT / ".env", override=True)
+load_dotenv(AGENT_DIR / ".env", override=True)
 
 
 def _strip_crewai_cache_breakpoints(llm):

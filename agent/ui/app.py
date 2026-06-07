@@ -106,7 +106,7 @@ with col2:
         st.rerun()
 
 # ── Sample questions ──────────────────────────────────────────────────────────
-if not st.session_state.history:
+if False:
     st.markdown("**💡 Câu hỏi mẫu**")
     sample_cols = st.columns(2)
     for idx, question in enumerate(SAMPLE_QUESTIONS):
