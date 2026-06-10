@@ -5,9 +5,29 @@ Chạy: streamlit run ui/app.py
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import requests
 import streamlit as st
-from main_benchmark_test import run_query
-from tools.schema_tool import ExecuteSQLTool
+
+
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+
+
+def run_query_via_backend(question: str) -> dict:
+    response = requests.post(
+        f"{BACKEND_URL}/query",
+        json={"question": question},
+        timeout=600,
+    )
+
+    if response.ok:
+        return response.json()
+
+    try:
+        detail = response.json().get("detail", response.text)
+    except Exception:
+        detail = response.text
+
+    raise RuntimeError(f"Backend error ({response.status_code}): {detail}")
 
 DATABASE_SCHEMA = """
 movies            (id, name, year, rank)
@@ -70,33 +90,23 @@ with st.expander("📋 Xem cấu trúc Database Schema (IMDb)", expanded=False):
 
 # ── Input ─────────────────────────────────────────────────────────────────────
 default_val = st.session_state.pop("input_question", "")
+user_question = st.text_input(
+    "💬 Nhập câu hỏi của bạn:",
+    value=default_val,
+    placeholder="VD: Top 5 diễn viên tham gia nhiều bộ phim nhất?",
+)
 
-col1, col2 = st.columns([3, 1])
-
+col1, col2 = st.columns([1, 5])
 with col1:
-    with st.form("query_form", clear_on_submit=False):
-        user_question = st.text_input(
-            "💬 Nhập câu hỏi của bạn:",
-            value=default_val,
-            placeholder="VD: Top 5 diễn viên tham gia nhiều bộ phim nhất?",
-        )
-
-        run_btn = st.form_submit_button(
-            "🚀 Chạy",
-            type="primary",
-            use_container_width=True,
-        )
-
+    run_btn = st.button("🚀 Chạy", type="primary", use_container_width=True)
 with col2:
-    st.write("")
-    st.write("")
-    if st.button("🗑️ Xóa lịch sử", use_container_width=True):
+    if st.button("🗑️ Xóa lịch sử", use_container_width=False):
         st.session_state.history = []
         st.session_state.selected_history_index = None
         st.rerun()
 
 # ── Sample questions ──────────────────────────────────────────────────────────
-if not st.session_state.history:
+if False:
     st.markdown("**💡 Câu hỏi mẫu**")
     sample_cols = st.columns(2)
     for idx, question in enumerate(SAMPLE_QUESTIONS):
@@ -121,7 +131,7 @@ if run_btn and user_question.strip():
             status_container.info(step)
 
         try:
-            result = run_query(user_question)
+            result = run_query_via_backend(user_question)
             status_container.success("✅ Hoàn thành!")
 
             # Lưu vào history
