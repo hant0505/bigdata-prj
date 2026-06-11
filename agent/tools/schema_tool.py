@@ -25,6 +25,8 @@ TABLES = {
 }
 
 
+_SCHEMA_TEXT_CACHE = None
+
 
 def _get_spark_session():
     if SparkSession is None:
@@ -77,6 +79,11 @@ class GetSchemaTool(BaseTool):
     description: str = "Lấy schema của các bảng trong silver layer (parquet files) bằng PySpark"
 
     def _run(self, **kwargs) -> str:
+        global _SCHEMA_TEXT_CACHE
+
+        if _SCHEMA_TEXT_CACHE is not None:
+            return _SCHEMA_TEXT_CACHE
+
         if SparkSession is None:
             return "PySpark không được cài đặt. Vui lòng cài pyspark trong môi trường agent."
 
@@ -97,7 +104,11 @@ class GetSchemaTool(BaseTool):
         if not schema_lines:
             return f"No parquet files found in the specified paths."
 
-        return "\n".join(schema_lines)
+        schema_text = "\n".join(schema_lines)
+        if "ERROR reading schema" not in schema_text:
+            _SCHEMA_TEXT_CACHE = schema_text
+
+        return schema_text
 
 """
 Hệ thống khởi tạo SparkSession một lần, 
