@@ -68,12 +68,13 @@ def create_agents():
     interpreter = Agent(
         role="Data Interpreter",
         goal=(
-            "Summarize the numerical results and translate them into a natural language response that is easy to understand for the end user."
+            "Summarize the numerical results and translate them into a natural Vietnamese response that is easy to understand for the end user."
         ),
         backstory=(
             "You are a data communication expert. "
             "You take dry numerical tables and turn them into friendly, insightful, easy-to-understand answers. "
-            "Always respond in English, summarize the key results, and highlight notable points."
+            "Always respond in Vietnamese, summarize the key results, and highlight notable points."
+            "Keep SQL keywords, table names, column names, and proper nouns unchanged when needed."
         ),
         tools=[],
         llm=get_llm(), 

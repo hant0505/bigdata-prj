@@ -2,6 +2,8 @@
 SQL Intelligence - Main Pipeline
 Run: python main.py
 """
+
+import time
 import os
 import sys
 # fix khi lam Dockerfile
@@ -102,6 +104,7 @@ write a complete SQL SELECT statement for Spark SQL over the silver parquet tabl
 Requirements:
 - Write only SELECT (no INSERT/UPDATE/DELETE)
 - Use correct table and column names according to the silver parquet schema
+- Use exact categorical values from schema notes. For actors.gender, use 'M' for male/nam and 'F' for female/nữ; do not use 'Male' or 'Female'.
 - JOIN on correct relationships between parquet tables
 - Add LIMIT 20 if no LIMIT is specified
 - Return only pure SQL
@@ -136,13 +139,13 @@ Return: The executed SQL + full results from the database
 Original user question: "{user_question}"
 
 Based on the results from the SQL Executor above,
-write an easy-to-understand answer in English:
+write an easy-to-understand answer in Vietnamese for the end user.:
 1. Answer the question directly
 2. Present the main results (top items, important numbers)
 3. Provide insights if any
 4. Keep it concise, succinct, and friendly
 """,
-        expected_output="An easy-to-understand English answer for the end user",
+        expected_output="An easy-to-understand Vietnamese answer for the end user",
         agent=interpreter,
         context=[task_execute],
     )
@@ -158,41 +161,74 @@ def run_query(user_question: str) -> dict:
     """
 
     global SELF_CORRECTION_STATS
-    
+
     # RESET lại thống kê trước khi bắt đầu câu hỏi mới
     SELF_CORRECTION_STATS["had_initial_error"] = False
     SELF_CORRECTION_STATS["retry_count"] = 0
+
     print(f"\n{'='*60}")
     print(f"🔍 QUESTION: {user_question}")
     print(f"{'='*60}\n")
 
+    total_start = time.perf_counter()
 
-    # SỬA TẠI ĐÂY: Không truyền biến llm tĩnh vào hàm create_agents nữa.
+    # Dùng để đo thời gian từng agent/task trong pipeline tuần tự
+    agent_timing_order = [
+        "Schema-Aware Query Planner",
+        "SQL Generator",
+        "SQL Executor & QA",
+        "Data Interpreter",
+    ]
+
+    agent_timings = {}
+    timing_state = {
+        "idx": 0,
+        "last_time": total_start,
+    }
+
+    def record_task_timing(task_output):
+        """
+        Callback được CrewAI gọi sau khi mỗi task hoàn thành.
+        Vì pipeline chạy sequential nên có thể map theo thứ tự task.
+        """
+        idx = timing_state["idx"]
+
+        if idx < len(agent_timing_order):
+            agent_name = agent_timing_order[idx]
+            now = time.perf_counter()
+            elapsed = now - timing_state["last_time"]
+
+            agent_timings[agent_name] = round(elapsed, 2)
+            print(f"[TIMING] {agent_name}: {elapsed:.2f}s")
+
+            timing_state["last_time"] = now
+            timing_state["idx"] += 1
+
     # Toàn bộ 4 Agents bên trong file agents.py đã được cấu hình tự động gọi hàm xoay vòng key động.
     planner, generator, executor, interpreter = create_agents()
-    
+
     tasks = create_tasks(user_question, planner, generator, executor, interpreter)
 
     crew = Crew(
         agents=[planner, generator, executor, interpreter],
         tasks=tasks,
-        process=Process.sequential,  # Chạy tuần tự: plan -> generate -> execute -> interpret
+        process=Process.sequential,
         verbose=True,
-        cache=False                  # Tắt bộ nhớ đệm tự động của CrewAI để tránh lỗi breakpoint
+        cache=False,
+        task_callback=record_task_timing,
     )
 
     result = crew.kickoff()
 
-    # print(f"\n{'='*60}")
-    # print("✅ FINAL RESULT:")
-    # print(f"{'='*60}")
-    # print(result.raw)
+    total_time = round(time.perf_counter() - total_start, 2)
 
-    # return {
-    #     "question": user_question,
-    #     "answer": result.raw,
-    #     "tasks_output": [t.output.raw if t.output else "" for t in tasks],
-    # }
+    print(f"\n{'='*60}")
+    print("⏱️ TIMING SUMMARY")
+    print(f"{'='*60}")
+    for agent_name, elapsed in agent_timings.items():
+        print(f"{agent_name}: {elapsed}s")
+    print(f"TOTAL: {total_time}s")
+
     generated_sql = ""
     if tasks[1].output and getattr(tasks[1].output, "pydantic", None):
         generated_sql = tasks[1].output.pydantic.sql
@@ -209,6 +245,8 @@ def run_query(user_question: str) -> dict:
         "tasks_output": [t.output.raw if t.output else "" for t in tasks],
         "had_initial_error": SELF_CORRECTION_STATS["had_initial_error"],
         "retry_count": SELF_CORRECTION_STATS["retry_count"],
+        "agent_timings": agent_timings,
+        "total_time_sec": total_time,
     }
 
 # ── CLI Demo ─────────────────────────────────────────────────────────────────

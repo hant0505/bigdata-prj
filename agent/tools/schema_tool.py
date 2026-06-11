@@ -82,7 +82,9 @@ class GetSchemaTool(BaseTool):
         global _SCHEMA_TEXT_CACHE
 
         if _SCHEMA_TEXT_CACHE is not None:
+            print("[SCHEMA CACHE] Using cached schema")
             return _SCHEMA_TEXT_CACHE
+        print("[SCHEMA CACHE] Loading schema from Spark/MinIO")
 
         if SparkSession is None:
             return "PySpark không được cài đặt. Vui lòng cài pyspark trong môi trường agent."
@@ -105,6 +107,11 @@ class GetSchemaTool(BaseTool):
             return f"No parquet files found in the specified paths."
 
         schema_text = "\n".join(schema_lines)
+        schema_text += (
+            "\n\nSemantic notes:\n"
+            "- actors.gender uses 'M' for male/nam/diễn viên nam and 'F' for female/nữ/diễn viên nữ. "
+            "Do not use 'Male' or 'Female'."
+        )
         if "ERROR reading schema" not in schema_text:
             _SCHEMA_TEXT_CACHE = schema_text
 
@@ -140,7 +147,7 @@ class ExecuteSQLTool(BaseTool):
         try:
             df_result = spark.sql(sql_clean)
             columns = df_result.columns
-            rows = df_result.limit(1000).collect()
+            rows = df_result.limit(100).collect()
 
             if not rows:
                 return "Kết quả: 0 dòng trả về (empty result)"
