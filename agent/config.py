@@ -7,10 +7,9 @@ load_dotenv()
 class GroqLLMManager:
     def __init__(self):
         # Đọc danh sách API Key của Groq từ file .env (Mã bắt đầu bằng gsk_...)
-        keys = os.getenv("GROQ_API_KEY") 
-
+        keys = (os.getenv("GROQ_API_KEY"))
         if not keys:
-            raise ValueError("GROQ_API_KEY not found!")
+            raise ValueError("GROQ_API_KEYnot found!")
 
         self.api_keys = [
             k.strip() for k in keys.split(",")
