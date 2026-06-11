@@ -69,6 +69,8 @@ services:
       dockerfile: Dockerfile
     image: bigdata-agent:latest
     container_name: bigdata-agent
+    env_file:
+      - ./agent/.env
     environment:
       - PYTHONUNBUFFERED=1
       # Cấu hình kết nối mạng nội bộ Docker tới Spark và MinIO
@@ -76,8 +78,6 @@ services:
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=12345678
-      # Đừng quên điền API Key nếu bạn sử dụng mô hình LLM
-      - API_KEY=${API_KEY}
       - PYSPARK_SUBMIT_ARGS=--jars /spark/jars/hadoop-aws-3.3.2.jar,/spark/jars/aws-java-sdk-bundle-1.11.1026.jar pyspark-shell
     ports:
       - "8501:8501"

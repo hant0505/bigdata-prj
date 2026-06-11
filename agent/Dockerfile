@@ -31,4 +31,4 @@ COPY . /app
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "main_benchmark_test.py"]
+CMD ["python", "-m", "streamlit", "run", "ui/app.py", "--server.address=0.0.0.0", "--server.port=8501"]

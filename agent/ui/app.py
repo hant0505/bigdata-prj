@@ -5,29 +5,20 @@ Chạy: streamlit run ui/app.py
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import requests
 import streamlit as st
+from main import run_query
+from tools.schema_tool import initialize_schema_cache
 
 
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+@st.cache_resource(show_spinner=False)
+def initialize_agent_resources():
+    initialize_schema_cache()
+    return True
 
 
-def run_query_via_backend(question: str) -> dict:
-    response = requests.post(
-        f"{BACKEND_URL}/query",
-        json={"question": question},
-        timeout=600,
-    )
-
-    if response.ok:
-        return response.json()
-
-    try:
-        detail = response.json().get("detail", response.text)
-    except Exception:
-        detail = response.text
-
-    raise RuntimeError(f"Backend error ({response.status_code}): {detail}")
+def run_query_direct(question: str) -> dict:
+    initialize_agent_resources()
+    return run_query(question)
 
 DATABASE_SCHEMA = """
 movies            (id, name, year, rank)
@@ -131,7 +122,7 @@ if run_btn and user_question.strip():
             status_container.info(step)
 
         try:
-            result = run_query_via_backend(user_question)
+            result = run_query_direct(user_question)
             status_container.success("✅ Hoàn thành!")
 
             # Lưu vào history
