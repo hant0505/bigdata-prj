@@ -7,3 +7,6 @@
 
 ## How to run
 docker-compose up -d
+
+## Website 
+http://34.142.199.71:8501/
